@@ -80,7 +80,7 @@ function createDBIfNotExist() {
   });
 }
 
-createDBIfNotExist()
+createDBIfNotExist();
 app.use(cors());
 app.use(express.static('client'));
 app.use(bodyParser.json());
@@ -603,14 +603,14 @@ app.post('/secret/:name', function (req, res) {
                   res.end();
                 }
                 else{
-                  console.log(err)
+                  console.log(err);
                   res.writeHead(500, 'Unknown error', {});
                   res.end();
                 }
               });
             }
             else{
-              console.log(err)
+              console.log(err);
               res.writeHead(500, 'Unknown error', {});
               res.end();
             }
@@ -651,7 +651,7 @@ app.delete('/secret/:name/:title', function (req, res) {
                       nbUsers += 1;
                       if(err !== null || ret.ok !== true){
                         console.log(JSON.stringify(Users[id]));
-                        console.log(err)
+                        console.log(err);
                         errors.push('Unknown error');
                       }
                       if(nbUsers === Object.keys(Users).length){
@@ -663,7 +663,7 @@ app.delete('/secret/:name/:title', function (req, res) {
                             }
                             else{
                               console.log(JSON.stringify(metaSecret));
-                              console.log(err)
+                              console.log(err);
                               res.writeHead(500, 'Unknown error', {});
                               res.end();
                             }
@@ -707,7 +707,7 @@ app.put('/secret/:name', function (req, res) {
         if(sExists){
           if(typeof user.keys[jsonBody.title].rights !== 'undefined' && user.keys[jsonBody.title].rights > 0){
             var secretDoc = {secret: {}};
-            secretDoc.secret[jsonBody.title] = secret
+            secretDoc.secret[jsonBody.title] = secret;
             secretDoc.secret[jsonBody.title].iv = jsonBody.iv;
             secretDoc.secret[jsonBody.title].secret = jsonBody.secret;
             secretDoc.secret[jsonBody.title].iv_meta = jsonBody.iv_meta;
@@ -775,7 +775,7 @@ app.post('/newKey/:name', function (req, res) {
                           OK += 1;
                         }
                         else{
-                          console.log(err)
+                          console.log(err);
                           KO +=1;
                         }
                         if(OK+KO === jsonBody.wrappedKeys.length){
@@ -794,7 +794,7 @@ app.post('/newKey/:name', function (req, res) {
                 });
               }
               else{
-                console.log(err)
+                console.log(err);
                 res.writeHead(500, 'Unknown error', {});
                 res.end();
               }
@@ -860,13 +860,13 @@ app.post('/unshare/:name', function (req, res) {
                             db.save(id, FUsers[id].rev, FUsers[id].doc, function (err, ret) {
                               nbUsers += 1;
                               if(err !== null || ret.ok !== true){
-                                console.log(err)
+                                console.log(err);
                                 errors2.push('Unknown error');
                               }
                               if(nbUsers === Object.keys(FUsers).length){
                                 db.save(metaSecret.id, metaSecret.rev, secretDoc, function (err, ret) {
                                   if(err !== null || ret.ok !== true){
-                                    console.log(err)
+                                    console.log(err);
 
                                     errors2.push('Unknown error');
                                   }
@@ -955,7 +955,7 @@ app.post('/share/:name', function (req, res) {
                       nbSecretDone += 1;
                       if(metaSecret.id in Secrets){
                         Secrets[metaSecret.id].doc.secret[secretObject.hashedTitle].users.push(secretObject.friendName);
-                        Secrets[metaSecret.id].doc.secret[secretObject.hashedTitle].users = _.uniq(Secrets[metaSecret.id].doc.secret[secretObject.hashedTitle].users)
+                        Secrets[metaSecret.id].doc.secret[secretObject.hashedTitle].users = _.uniq(Secrets[metaSecret.id].doc.secret[secretObject.hashedTitle].users);
                       }
                       else{
                         var secretDoc = {secret: {}};
@@ -985,7 +985,7 @@ app.post('/share/:name', function (req, res) {
 
                       if((nbSecretDone + errors.length) === jsonBody.secretObjects.length){
                         if(errors.length === 0){
-                          var errors2 = []
+                          var errors2 = [];
                           var nbUsers = 0;
                           Object.keys(FUsers).forEach(function(idFuser){
                             db.save(idFuser, FUsers[idFuser].rev, FUsers[idFuser].doc, function (err, ret) {
@@ -1002,7 +1002,7 @@ app.post('/share/:name', function (req, res) {
                                     nbSecrets += 1;
                                     if(err !== null || ret.ok !== true){
                                       console.log(Secrets[idSecret]);
-                                      console.log(err)
+                                      console.log(err);
                                       errors2.push('Unknown error');
                                     }
                                     if(nbSecrets === Object.keys(Secrets).length){
@@ -1083,6 +1083,12 @@ var server = app.listen(port, '0.0.0.0', function () {
 
 
 app.get('/reset', function (req, res) {
+  var db = null;
+  if (couchDBUrl) {
+      db = new(cradle.Connection)(couchDBUrl).database('secretintest', couchDBOptions);
+  } else {
+    db = new(cradle.Connection)().database('secretintest', couchDBOptions);
+  }
   db.destroy(function(err){
     db.create(function(err){
       db.save('_design/users', {
