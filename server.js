@@ -913,7 +913,7 @@ app.post('/unshare/:name', function (req, res) {
             });
           }
           else{
-            res.writeHead(403, 'You can\'t unshare secret '+jsonBody.title, {});
+            res.writeHead(403, 'You can\'t unshare this secret', {});
             res.end();
           }
         }
@@ -1045,7 +1045,7 @@ app.post('/share/:name', function (req, res) {
                 }
               }
               else{
-                errors.push('You can\'t share secret '+secretObject.hashedTitle);
+                errors.push('You can\'t share this secret');
                 if(errors.length === jsonBody.secretObjects.length){
                   res.writeHead(500, errors.join('\n'), {});
                   res.end();
