@@ -1,0 +1,5 @@
+version: '2'
+services:
+  secretin-server:
+    environment:
+      TEST_SERVER: 1

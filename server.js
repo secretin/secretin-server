@@ -1081,50 +1081,52 @@ var server = app.listen(port, '0.0.0.0', function () {
 
 });
 
-
-app.get('/reset', function (req, res) {
-  var db = null;
-  if (couchDBUrl) {
-      db = new(cradle.Connection)(couchDBUrl).database('secretintest', couchDBOptions);
-  } else {
-    db = new(cradle.Connection)().database('secretintest', couchDBOptions);
-  }
-  db.destroy(function(err){
-    db.create(function(err){
-      db.save('_design/users', {
-            getUser: {
-                map: function(doc) {
-                  if(doc.user){
-                    var key = Object.keys(doc.user)[0];
-                    emit(key, {res: doc.user[key], rev: doc._rev});
+if(process.env.TEST_SERVER){
+  app.get('/reset', function (req, res) {
+    var db = null;
+    if (couchDBUrl) {
+        db = new(cradle.Connection)(couchDBUrl).database('secretintest', couchDBOptions);
+    } else {
+      db = new(cradle.Connection)().database('secretintest', couchDBOptions);
+    }
+    db.destroy(function(err){
+      db.create(function(err){
+        db.save('_design/users', {
+              getUser: {
+                  map: function(doc) {
+                    if(doc.user){
+                      var key = Object.keys(doc.user)[0];
+                      emit(key, {res: doc.user[key], rev: doc._rev});
+                    }
                   }
-                }
-            }
-      });
+              }
+        });
 
-      db.save('_design/secrets', {
-            getSecret: {
-                map: function(doc) {
+        db.save('_design/secrets', {
+              getSecret: {
+                  map: function(doc) {
+                    if(doc.secret){
+                      var key = Object.keys(doc.secret)[0];
+                      emit(key, {res: doc.secret[key], rev: doc._rev});
+                    }
+                  }
+              },
+              getMetadatas: {
+                map: function (doc) {
                   if(doc.secret){
                     var key = Object.keys(doc.secret)[0];
-                    emit(key, {res: doc.secret[key], rev: doc._rev});
+                    var res = doc.secret[key].users;
+                    doc.secret[key].users.forEach(function(user){
+                      emit(user, {res: {title: key, iv_meta: doc.secret[key].iv_meta, metadatas: doc.secret[key].metadatas}, rev: doc._rev});
+                    });
                   }
                 }
-            },
-            getMetadatas: {
-              map: function (doc) {
-                if(doc.secret){
-                  var key = Object.keys(doc.secret)[0];
-                  var res = doc.secret[key].users;
-                  doc.secret[key].users.forEach(function(user){
-                    emit(user, {res: {title: key, iv_meta: doc.secret[key].iv_meta, metadatas: doc.secret[key].metadatas}, rev: doc._rev});
-                  });
-                }
               }
-            }
+        });
+        res.writeHead(200, 'DB reset', {});
+        res.end();
       });
-      res.writeHead(200, 'DB reset', {});
-      res.end();
     });
   });
-});
+}
+
