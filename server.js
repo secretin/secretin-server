@@ -801,7 +801,7 @@ app.post('/newKey/:name', function (req, res) {
             });
           }
           else{
-            res.writeHead(403, 'You can\'t reset this key', {});
+            res.writeHead(403, 'You can\'t generate new key for this secret', {});
             res.end();
           }
         }
@@ -890,13 +890,16 @@ app.post('/unshare/:name', function (req, res) {
                       }
                     }
                     else{
-                      res.writeHead(500, 'Desync', {'Content-Type': 'application/json; charset=utf-8'});
-                      res.end(JSON.stringify({friendName: friendName, title: jsonBody.title}));
+                      errors.push('You didn\'t share this secret with this user');
+                      if(errors.length === jsonBody.friendNames.length){
+                        res.writeHead(500, errors.join('\n'), {});
+                        res.end();
+                      }
                     }
                   }
                   else{
-                    errors.push('Friend ' + friendName + ' not found');
-                    if(errors.length === jsonBody.secretObjects.length){
+                    errors.push('Friend not found');
+                    if(errors.length === jsonBody.friendNames.length){
                       res.writeHead(500, errors.join('\n'), {});
                       res.end();
                     }
@@ -1028,7 +1031,7 @@ app.post('/share/:name', function (req, res) {
                       }
                     }
                     else{
-                      errors.push('Friend ' + secretObject.friendName + ' not found');
+                      errors.push('Friend not found');
                       if(errors.length === jsonBody.secretObjects.length){
                         res.writeHead(500, errors.join('\n'), {});
                         res.end();
@@ -1053,7 +1056,7 @@ app.post('/share/:name', function (req, res) {
               }
             }
             else{
-              errors.push('Secret ' + secretObject.hashedTitle + ' not found');
+              errors.push('Secret not found');
               if(errors.length === jsonBody.secretObjects.length){
                 res.writeHead(500, errors.join('\n'), {});
                 res.end();
