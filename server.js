@@ -510,8 +510,8 @@ app.put('/deactivateTotp/:name', function (req, res) {
   });
 });
 
-// activate shortpass
-app.put('/activateShortpass/:name', function (req, res) {
+// activate shortlogin
+app.put('/activateShortLogin/:name', function (req, res) {
   checkSignature(req.params.name, req.body.sig, req.body.json, function(valid, user, metaUser){
     if(!valid){
       res.writeHead(403, 'Invalid signature', {});
