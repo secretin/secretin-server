@@ -108,6 +108,11 @@ function secretExists(title, callback){
   });
 }
 
+function reason(res, code, text){
+  res.writeHead(code, text, {});
+  res.end(JSON.stringify({reason: text}));
+}
+
 function checkSignature(name, sig, datas, callback) {
   userExists(name, function(exists, user, metaUser){
     if(exists){
@@ -173,8 +178,7 @@ app.get('/totp/:seed/:otp', function (req, res) {
     res.json('ok');
   }
   else{
-    res.writeHead(404, 'Invalid couple', {});
-    res.end();
+    reason(res, 404, 'Invalid couple');
   }
 });
 
@@ -273,14 +277,13 @@ app.get('/user/:name/:hash', function (req, res) {
             }
             else{
               console.log(err);
-              res.writeHead(500, 'Unknown error', {});
+              reason(res, 500, 'Unknown error');
             }
           });
         });
     }
     else{
-      res.writeHead(404, 'User not found', {});
-      res.end();
+      reason(res, 404, 'User not found');
     }
   });
 });
@@ -308,20 +311,17 @@ app.get('/protectKey/:name/:deviceId/:hash', function (req, res) {
               res.json(content);
             }
             else{
-              res.writeHead(403, 'Shortpass expired', {});
-              res.end();
+              reason(res, 403, 'Shortpass expired');
             }
           });
         }
         else{
-          res.writeHead(403, 'Shortpass not activated', {});
-          res.end();
+          reason(res, 403, 'Shortpass not activated');
         }
       });
     }
     else{
-      res.writeHead(404, 'User not found', {});
-      res.end();
+      reason(res, 404, 'User not found');
     }
   });
 });
@@ -338,8 +338,7 @@ app.get('/user/:name', function (req, res) {
       // user.metadatas = {};
       // user.pass.hash = forge.util.bytesToHex((forge.random.getBytesSync(32)));
       // res.json(user);
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       db.view('secrets/getMetadatas', { key: req.params.name }, function (err, doc) {
@@ -354,7 +353,7 @@ app.get('/user/:name', function (req, res) {
         }
         else{
           console.log(err);
-          res.writeHead(500, 'Unknown error', {});
+          reason(res, 500, 'Unknown error');
         }
       });
     }
@@ -373,8 +372,7 @@ app.get('/database/:name', function (req, res) {
       // delete user.seed;
       // user.keys = {};
       // user.pass.hash = forge.util.bytesToHex((forge.random.getBytesSync(32)));
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       db.users[req.params.name] = user;
@@ -405,8 +403,7 @@ app.get('/ping', function(req, res) {
 app.get('/secret/:name/:title', function (req, res) {
   checkSignature(req.params.name, req.query.sig, url.parse(req.url).pathname, function(valid, user){
     if(!valid){
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       secretExists(req.params.title, function(exists, secret){
@@ -429,8 +426,7 @@ app.get('/secret/:name/:title', function (req, res) {
 app.post('/user/:name', function (req, res) {
   userExists(req.params.name, function(exists){
     if(exists){
-      res.writeHead(403, 'User already exists', {});
-      res.end();
+      reason(res, 403, 'User already exists');
     }
     else{
       var doc = {user: {}};
@@ -440,13 +436,11 @@ app.post('/user/:name', function (req, res) {
       doc.user[req.params.name] = req.body;
       db.save(doc, function (err, ret) {
         if(err === null && ret.ok === true){
-          res.writeHead(200, 'New user saved', {});
-          res.end();
+          reason(res, 200, 'New user saved');
         }
         else{
           console.log(err)
-          res.writeHead(500, 'Unknown error', {});
-          res.end();
+          reason(res, 500, 'Unknown error');
         }
       });
     }
@@ -457,8 +451,7 @@ app.post('/user/:name', function (req, res) {
 app.put('/activateTotp/:name', function (req, res) {
   checkSignature(req.params.name, req.body.sig, req.body.json, function(valid, user, metaUser){
     if(!valid){
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       var jsonBody = JSON.parse(req.body.json);
@@ -469,13 +462,11 @@ app.put('/activateTotp/:name', function (req, res) {
 
       db.save(metaUser.id, metaUser.rev, doc, function (err, ret) {
         if(err === null && ret.ok === true){
-          res.writeHead(200, 'TOTP activated', {});
-          res.end();
+          reason(res, 200, 'TOTP activated');
         }
         else{
           console.log(err);
-          res.writeHead(500, 'Unknown error', {});
-          res.end();
+          reason(res, 500, 'Unknown error');
         }
       });
     }
@@ -486,8 +477,7 @@ app.put('/activateTotp/:name', function (req, res) {
 app.put('/deactivateTotp/:name', function (req, res) {
   checkSignature(req.params.name, req.query.sig, url.parse(req.url).pathname, function(valid, user, metaUser){
     if(!valid){
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       var doc = {user: {}};
@@ -497,13 +487,11 @@ app.put('/deactivateTotp/:name', function (req, res) {
 
       db.save(metaUser.id, metaUser.rev, doc, function (err, ret) {
         if(err === null && ret.ok === true){
-          res.writeHead(200, 'TOTP deactivated', {});
-          res.end();
+          reason(res, 200, 'TOTP deactivated');
         }
         else{
           console.log(err);
-          res.writeHead(500, 'Unknown error', {});
-          res.end();
+          reason(res, 500, 'Unknown error');
         }
       });
     }
@@ -514,8 +502,7 @@ app.put('/deactivateTotp/:name', function (req, res) {
 app.put('/activateShortLogin/:name', function (req, res) {
   checkSignature(req.params.name, req.body.sig, req.body.json, function(valid, user, metaUser){
     if(!valid){
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       var jsonBody = JSON.parse(req.body.json);
@@ -538,15 +525,13 @@ app.put('/activateShortLogin/:name', function (req, res) {
             'protectKey', jsonBody.shortpass.protectKey
             ], function (err, r) {
               client.expire(key, 60*60*24*7, function(err, r2){
-                res.writeHead(200, 'Shortpass activated', {});
-                res.end();
+                reason(res, 200, 'Shortpass activated');
               });
           });
         }
         else{
           console.log(err);
-          res.writeHead(500, 'Unknown error', {});
-          res.end();
+          reason(res, 500, 'Unknown error');
         }
       });
     }
@@ -557,8 +542,7 @@ app.put('/activateShortLogin/:name', function (req, res) {
 app.put('/user/:name', function (req, res) {
   checkSignature(req.params.name, req.body.sig, req.body.json, function(valid, user, metaUser){
     if(!valid){
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       var jsonBody = JSON.parse(req.body.json);
@@ -578,13 +562,11 @@ app.put('/user/:name', function (req, res) {
       }
       db.save(metaUser.id, metaUser.rev, doc, function (err, ret) {
         if(err === null && ret.ok === true){
-          res.writeHead(200, 'User updated', {});
-          res.end();
+          reason(res, 200, 'User updated');
         }
         else{
           console.log(err);
-          res.writeHead(500, 'Unknown error', {});
-          res.end();
+          reason(res, 500, 'Unknown error');
         }
       });
     }
@@ -595,15 +577,13 @@ app.put('/user/:name', function (req, res) {
 app.post('/secret/:name', function (req, res) {
   checkSignature(req.params.name, req.body.sig, req.body.json, function(valid, user, metaUser){
     if(!valid){
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       var jsonBody = JSON.parse(req.body.json);
       secretExists(jsonBody.title, function(sExists){
         if(sExists){
-          res.writeHead(403, 'Secret already exists', {});
-          res.end();
+          reason(res, 403, 'Secret already exists');
         }
         else{
           var doc = {secret: {}};
@@ -627,20 +607,17 @@ app.post('/secret/:name', function (req, res) {
             if(err === null && ret.ok === true){
               db.save(doc, function (err, ret) {
                 if(err === null && ret.ok === true){
-                  res.writeHead(200, 'New secret saved', {});
-                  res.end();
+                  reason(res, 200, 'New secret saved');
                 }
                 else{
                   console.log(err);
-                  res.writeHead(500, 'Unknown error', {});
-                  res.end();
+                  reason(res, 500, 'Unknown error');
                 }
               });
             }
             else{
               console.log(err);
-              res.writeHead(500, 'Unknown error', {});
-              res.end();
+              reason(res, 500, 'Unknown error');
             }
           });
         }
@@ -653,8 +630,7 @@ app.post('/secret/:name', function (req, res) {
 app.delete('/secret/:name/:title', function (req, res) {
   checkSignature(req.params.name, req.body.sig, 'DELETE '+url.parse(req.url).pathname, function(valid, currentUser){
     if(!valid){
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       secretExists(req.params.title, function(sExists, secret, metaSecret){
@@ -686,20 +662,17 @@ app.delete('/secret/:name/:title', function (req, res) {
                         if(errors.length === 0){
                           db.remove(metaSecret.id, metaSecret.rev, function(err, ret){
                             if(err === null && ret.ok === true){
-                              res.writeHead(200, 'Secret deleted');
-                              res.end();
+                              reason(res, 200, 'Unknown error')
                             }
                             else{
                               console.log(JSON.stringify(metaSecret));
                               console.log(err);
-                              res.writeHead(500, 'Unknown error', {});
-                              res.end();
+                              reason(res, 500, 'Unknown error');
                             }
                           });
                         }
                         else{
-                          res.writeHead(500, errors.join('\n'), {});
-                          res.end();
+                          reason(res, 500, errors.join('\n'))
                         }
                       }
                     });
@@ -709,13 +682,11 @@ app.delete('/secret/:name/:title', function (req, res) {
             });
           }
           else{
-            res.writeHead(403, 'You can\'t delete this secret', {});
-            res.end();
+            reason(res, 403, 'You can\'t delete this secret');
           }
         }
         else{
-          res.writeHead(404, 'Secret not found', {});
-          res.end();
+          reason(res, 404, 'Secret not found');
         }
       });
     }
@@ -726,8 +697,7 @@ app.delete('/secret/:name/:title', function (req, res) {
 app.put('/secret/:name', function (req, res) {
   checkSignature(req.params.name, req.body.sig, req.body.json, function(valid, user, metaUser){
     if(!valid){
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       var jsonBody = JSON.parse(req.body.json);
@@ -742,24 +712,20 @@ app.put('/secret/:name', function (req, res) {
             secretDoc.secret[jsonBody.title].metadatas = jsonBody.metadatas;
             db.save(metaSecret.id, metaSecret.rev, secretDoc, function (err, ret) {
               if(err === null && ret.ok === true){
-                res.writeHead(200, 'Secret updated', {});
-                res.end();
+                reason(res, 200, 'Secret updated');
               }
               else{
                 console.log(err);
-                res.writeHead(500, 'Unknown error', {});
-                res.end();
+                reason(res, 500, 'Unknown error');
               }
             });
           }
           else{
-            res.writeHead(403, 'You can\'t edit this secret', {});
-            res.end();
+            reason(res, 403, 'You can\'t edit this secret')
           }
         }
         else{
-          res.writeHead(404, 'Secret not found', {});
-          res.end();
+          reason(res, 404, 'Secret not found');
         }
       });
     }
@@ -770,8 +736,7 @@ app.put('/secret/:name', function (req, res) {
 app.post('/newKey/:name', function (req, res) {
   checkSignature(req.params.name, req.body.sig, req.body.json, function(valid, user, metaUser){
     if(!valid){
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       var jsonBody = JSON.parse(req.body.json);
@@ -808,12 +773,10 @@ app.post('/newKey/:name', function (req, res) {
                         }
                         if(OK+KO === jsonBody.wrappedKeys.length){
                           if(KO === 0){
-                            res.writeHead(200, 'Generated new key reshared', {});
-                            res.end();
+                            reason(res, 200, 'Generated new key reshared');
                           }
                           else{
-                            res.writeHead(500, 'Unknown error', {});
-                            res.end();
+                            reason(res, 500, 'Unknown error');
                           }
                         }
                       });
@@ -823,19 +786,16 @@ app.post('/newKey/:name', function (req, res) {
               }
               else{
                 console.log(err);
-                res.writeHead(500, 'Unknown error', {});
-                res.end();
+                reason(res, 500, 'Unknown error');
               }
             });
           }
           else{
-            res.writeHead(403, 'You can\'t generate new key for this secret', {});
-            res.end();
+            reason(res, 403, 'You can\'t generate new key for this secret')
           }
         }
         else{
-          res.writeHead(404, 'Secret not found', {});
-          res.end();
+          reason(res, 404, 'Secret not found');
         }
       });
     }
@@ -846,8 +806,7 @@ app.post('/newKey/:name', function (req, res) {
 app.post('/unshare/:name', function (req, res) {
   checkSignature(req.params.name, req.body.sig, req.body.json, function(valid, user, metaUser){
     if(!valid){
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       var jsonBody = JSON.parse(req.body.json);
@@ -899,12 +858,10 @@ app.post('/unshare/:name', function (req, res) {
                                     errors2.push('Unknown error');
                                   }
                                   if(errors2.length === 0){
-                                    res.writeHead(200, 'Secret unshared', {});
-                                    res.end();
+                                    reason(res, 200, 'Secret unshared');
                                   }
                                   else{
-                                    res.writeHead(500, 'Unknown error', {});
-                                    res.end();
+                                    reason(res, 500, 'Unknown error');
                                   }
                                 });
                               }
@@ -912,45 +869,39 @@ app.post('/unshare/:name', function (req, res) {
                           })
                         }
                         else{
-                          res.writeHead(500, errors.join('\n'), {});
-                          res.end();
+                          reason(res, 500, errors.join('\n'));
                         }
                       }
                     }
                     else{
                       errors.push('You didn\'t share this secret with this user');
                       if(errors.length === jsonBody.friendNames.length){
-                        res.writeHead(500, errors.join('\n'), {});
-                        res.end();
+                        reason(res, 500, errors.join('\n'));
                       }
                     }
                   }
                   else{
                     errors.push('Friend not found');
                     if(errors.length === jsonBody.friendNames.length){
-                      res.writeHead(500, errors.join('\n'), {});
-                      res.end();
+                      reason(res, 500, errors.join('\n'));
                     }
                   }
                 }
                 else{
                   yourself = 1;
                   if(jsonBody.friendNames.length === 1){
-                    res.writeHead(200, 'You can\'t unshare with yourself', {});
-                    res.end();
+                    reason(res, 200, 'You can\'t unshare with yourself');
                   }
                 }
               });
             });
           }
           else{
-            res.writeHead(403, 'You can\'t unshare this secret', {});
-            res.end();
+            reason(res, 403, 'You can\'t unshare this secret');
           }
         }
         else{
-          res.writeHead(404, 'Secret not found', {});
-          res.end();
+          reason(res, 404, 'Secret not found');
         }
       });
     }
@@ -962,8 +913,7 @@ app.post('/unshare/:name', function (req, res) {
 app.post('/share/:name', function (req, res) {
   checkSignature(req.params.name, req.body.sig, req.body.json, function(valid, user, metaUser){
     if(!valid){
-      res.writeHead(403, 'Invalid signature', {});
-      res.end();
+      reason(res, 403, 'Invalid signature');
     }
     else{
       var jsonBody = JSON.parse(req.body.json);
@@ -972,8 +922,7 @@ app.post('/share/:name', function (req, res) {
       var Secrets = {};
       var nbSecretDone = 0;
       if(jsonBody.secretObjects.length === 0){
-        res.writeHead(200, 'Secret shared', {});
-        res.end();
+        reason(res, 200, 'Secret shared');
       }
       else{
         jsonBody.secretObjects.forEach(function(secretObject){
@@ -1038,12 +987,10 @@ app.post('/share/:name', function (req, res) {
                                     }
                                     if(nbSecrets === Object.keys(Secrets).length){
                                       if(errors2.length === 0){
-                                        res.writeHead(200, 'Secret shared', {});
-                                        res.end();
+                                        reason(res, 200, 'Secret shared');
                                       }
                                       else{
-                                        res.writeHead(500, 'Unknown error', {});
-                                        res.end();
+                                        reason(res, 500, 'Unknown error');
                                       }
                                     }
                                   });
@@ -1053,16 +1000,14 @@ app.post('/share/:name', function (req, res) {
                           });
                         }
                         else{
-                          res.writeHead(500, errors.join('\n'), {});
-                          res.end();
+                          reason(res, 500, errors.join('\n'));
                         }
                       }
                     }
                     else{
                       errors.push('Friend not found');
                       if(errors.length === jsonBody.secretObjects.length){
-                        res.writeHead(500, errors.join('\n'), {});
-                        res.end();
+                        reason(res, 500, errors.join('\n'));
                       }
                     }
                   });
@@ -1070,24 +1015,21 @@ app.post('/share/:name', function (req, res) {
                 else{
                   errors.push('You can\'t share with yourself');
                   if(errors.length === jsonBody.secretObjects.length){
-                    res.writeHead(500, errors.join('\n'), {});
-                    res.end();
+                    reason(res, 500, errors.join('\n'));
                   }
                 }
               }
               else{
                 errors.push('You can\'t share this secret');
                 if(errors.length === jsonBody.secretObjects.length){
-                  res.writeHead(500, errors.join('\n'), {});
-                  res.end();
+                  reason(res, 500, errors.join('\n'));
                 }
               }
             }
             else{
               errors.push('Secret not found');
               if(errors.length === jsonBody.secretObjects.length){
-                res.writeHead(500, errors.join('\n'), {});
-                res.end();
+                reason(res, 500, errors.join('\n'));
               }
             }
           });
@@ -1154,8 +1096,7 @@ if(process.env.TEST_SERVER){
                 }
               }
         });
-        res.writeHead(200, 'DB reset', {});
-        res.end();
+        reason(res, 200, 'DB reset');
       });
     });
   });
