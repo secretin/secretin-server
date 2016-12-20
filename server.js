@@ -482,6 +482,34 @@ app.put('/activateTotp/:name', function (req, res) {
   });
 });
 
+// deactivate totp
+app.put('/deactivateTotp/:name', function (req, res) {
+  checkSignature(req.params.name, req.query.sig, url.parse(req.url).pathname, function(valid, user, metaUser){
+    if(!valid){
+      res.writeHead(403, 'Invalid signature', {});
+      res.end();
+    }
+    else{
+      var doc = {user: {}};
+      doc.user[req.params.name] = user;
+      doc.user[req.params.name].pass.totp = false;
+      doc.user[req.params.name].seed = '';
+
+      db.save(metaUser.id, metaUser.rev, doc, function (err, ret) {
+        if(err === null && ret.ok === true){
+          res.writeHead(200, 'TOTP deactivated', {});
+          res.end();
+        }
+        else{
+          console.log(err);
+          res.writeHead(500, 'Unknown error', {});
+          res.end();
+        }
+      });
+    }
+  });
+});
+
 // activate shortpass
 app.put('/activateShortpass/:name', function (req, res) {
   checkSignature(req.params.name, req.body.sig, req.body.json, function(valid, user, metaUser){
