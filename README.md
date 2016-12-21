@@ -8,3 +8,5 @@ To use test in server mode from secretin-lib, you have to run :
 `docker-compose -f docker-compose.yml -f docker-compose.test.yml up`
 
 It will add `/reset` route to wipe the database during tests.
+
+The server will listen on port 3000.
