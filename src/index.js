@@ -33,8 +33,6 @@ app.use(cors());
 app.use(bodyParser.json());
 
 initializeDb(config, (couchdb, redis) => {
-  app.use(Console.trace);
-
   app.use('/ping', ping());
   app.use('/database', getDatabase({ couchdb, redis }));
   app.use('/user', getUser({ couchdb, redis }));
@@ -53,11 +51,12 @@ initializeDb(config, (couchdb, redis) => {
   app.use('/newKey', newKey({ couchdb, redis }));
   app.use('/totp', testTotp({ couchdb, redis }));
   if (process.env.TEST_SERVER) {
+    app.use(Console.trace);
     Console.log('WARNING: reset feature activated');
     app.use('/reset', reset({ couchdb, redis }));
   }
 });
 
-app.server.listen(process.env.PORT || config.port);
+app.server.listen(process.env.SECRETIN_SERVER_PORT || config.port, '0.0.0.0');
 
 export default app;

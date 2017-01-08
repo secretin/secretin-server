@@ -47,9 +47,21 @@ export function createViews(couchdb) {
 }
 
 export default (config, callback) => {
-  const redisClient = Redis.createClient(config.redisConnection || null);
-  const couchDBClient = new CouchDB(config.couchDBConnection || null);
-  couchDBClient.databaseName = config.couchDBName;
+  const redisClient = Redis.createClient(
+    process.env.SECRETIN_SERVER_REDIS_URL || config.redisConnection || null);
+  const couchdbConnection = {
+    host: process.env.SECRETIN_SERVER_COUCHDB_HOST || config.couchDBConnection.host,
+    port: process.env.SECRETIN_SERVER_COUCHDB_PORT || config.couchDBConnection.host,
+    protocol: process.env.SECRETIN_SERVER_COUCHDB_PROTOCOL || config.couchDBConnection.protocol,
+  };
+  if (process.env.SECRETIN_SERVER_COUCHDB_USER && process.env.SECRETIN_SERVER_COUCHDB_PASS) {
+    couchdbConnection.auth = {
+      user: process.env.SECRETIN_SERVER_COUCHDB_USER,
+      pass: process.env.SECRETIN_SERVER_COUCHDB_PASS,
+    };
+  }
+  const couchDBClient = new CouchDB(couchdbConnection || null);
+  couchDBClient.databaseName = process.env.SECRETIN_SERVER_COUCHDB_DBNAME || config.couchDBName;
 
   couchDBClient.createDatabase(config.couchDBName)
     .then(() => createViews(couchDBClient)

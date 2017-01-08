@@ -3,3 +3,4 @@ services:
   secretin-server:
     environment:
       TEST_SERVER: 1
+      SECRETIN_SERVER_COUCHDB_DBNAME: secretintest
