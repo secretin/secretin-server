@@ -22,6 +22,7 @@ services:
        SECRETIN_SERVER_COUCHDB_PORT: 5984
        SECRETIN_SERVER_COUCHDB_PROTOCOL: http
        SECRETIN_SERVER_COUCHDB_DBNAME: secretin
+       SECRETIN_SERVER_COUCHDB_AUTH: 0
      depends_on:
        - redis
        - couchdb

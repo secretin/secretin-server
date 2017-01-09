@@ -49,21 +49,25 @@ export function createViews(couchdb) {
 export default (config, callback) => {
   const redisClient = Redis.createClient(
     process.env.SECRETIN_SERVER_REDIS_URL || config.redisConnection || null);
-  const couchdbConnection = {
+  const couchDBConnection = {
     host: process.env.SECRETIN_SERVER_COUCHDB_HOST || config.couchDBConnection.host,
-    port: process.env.SECRETIN_SERVER_COUCHDB_PORT || config.couchDBConnection.host,
+    port: process.env.SECRETIN_SERVER_COUCHDB_PORT || config.couchDBConnection.port,
     protocol: process.env.SECRETIN_SERVER_COUCHDB_PROTOCOL || config.couchDBConnection.protocol,
+    auth: {
+      user: process.env.SECRETIN_SERVER_COUCHDB_USER || config.couchDBConnection.auth.user,
+      pass: process.env.SECRETIN_SERVER_COUCHDB_PASS || config.couchDBConnection.auth.pass,
+    },
   };
-  if (process.env.SECRETIN_SERVER_COUCHDB_USER && process.env.SECRETIN_SERVER_COUCHDB_PASS) {
-    couchdbConnection.auth = {
-      user: process.env.SECRETIN_SERVER_COUCHDB_USER,
-      pass: process.env.SECRETIN_SERVER_COUCHDB_PASS,
-    };
-  }
-  const couchDBClient = new CouchDB(couchdbConnection || null);
-  couchDBClient.databaseName = process.env.SECRETIN_SERVER_COUCHDB_DBNAME || config.couchDBName;
 
-  couchDBClient.createDatabase(config.couchDBName)
+  if ((process.env.SECRETIN_SERVER_COUCHDB_AUTH && process.env.SECRETIN_SERVER_COUCHDB_AUTH !== 1)
+      || !config.couchDBAuth) {
+    delete couchDBConnection.auth;
+  }
+
+  const couchDBClient = new CouchDB(couchDBConnection);
+  couchDBClient.databaseName = process.env.SECRETIN_SERVER_COUCHDB_DBNAME || process.env.TEST_SERVER ? `${config.couchDBName}test` : config.couchDBName;
+
+  couchDBClient.createDatabase(couchDBClient.databaseName)
     .then(() => createViews(couchDBClient)
     , (error) => {
       if (error.code !== 'EDBEXISTS') {
