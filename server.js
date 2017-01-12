@@ -820,8 +820,8 @@ app.post('/unshare/:name', function (req, res) {
             var nbSecretDone = 0;
             var yourself = 0;
             jsonBody.friendNames.forEach(function(friendName){
-              userExists(friendName, function(uFExists, fUser, metaFUser){
-                if(req.params.name !== friendName){
+              if(req.params.name !== friendName){
+                userExists(friendName, function(uFExists, fUser, metaFUser){
                   if(uFExists){
                     if(typeof fUser.keys[jsonBody.title] !== 'undefined'){
                       nbSecretDone += 1;
@@ -886,14 +886,14 @@ app.post('/unshare/:name', function (req, res) {
                       reason(res, 500, errors.join('\n'));
                     }
                   }
+                });
+              }
+              else{
+                yourself = 1;
+                if(jsonBody.friendNames.length === 1){
+                  reason(res, 200, 'You can\'t unshare with yourself');
                 }
-                else{
-                  yourself = 1;
-                  if(jsonBody.friendNames.length === 1){
-                    reason(res, 200, 'You can\'t unshare with yourself');
-                  }
-                }
-              });
+              }
             });
           }
           else{
