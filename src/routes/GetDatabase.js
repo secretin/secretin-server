@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import url from 'url';
+import _ from 'lodash';
 
 import Console from '../console';
 import Utils from '../utils';
@@ -24,7 +25,7 @@ export default ({ couchdb }) => {
         if (hashedTitles.length !== 0) {
           hashedTitles.forEach((hashedTitle) => {
             secretPromises.push(
-              Utils.secretExists({ couchdb, title: hashedTitle })
+              Utils.secretExists({ couchdb, title: hashedTitle }, false)
                 .then(secret => ({
                   secret,
                   title: hashedTitle,
@@ -35,6 +36,7 @@ export default ({ couchdb }) => {
         return Promise.resolve([]);
       })
       .then((secrets) => {
+        _.remove(secrets, secret => secret.secret.notFound);
         secrets.forEach((rawSecret) => {
           const secret = rawSecret.secret.data;
           db.secrets[rawSecret.title] = secret;

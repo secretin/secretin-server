@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import url from 'url';
+import _ from 'lodash';
 
 import Console from '../console';
 import Utils from '../utils';
@@ -9,6 +10,7 @@ export default ({ couchdb }) => {
   route.delete('/:name/:title', (req, res) => {
     let rawUser;
     let rawSecret;
+    let usersNotFound;
     Utils.checkSignature({
       couchdb,
       name: req.params.name,
@@ -26,7 +28,7 @@ export default ({ couchdb }) => {
           const userPromises = [];
           rawSecret.data.users.forEach((username) => {
             userPromises.push(
-              Utils.userExists({ couchdb, name: username })
+              Utils.userExists({ couchdb, name: username }, false)
                 .then(user => ({
                   user,
                   name: username,
@@ -40,6 +42,7 @@ export default ({ couchdb }) => {
         };
       })
       .then((users) => {
+        usersNotFound = _.remove(users, user => user.user.notFound);
         const userPromises = [];
         users.forEach((user) => {
           const doc = {
@@ -56,7 +59,12 @@ export default ({ couchdb }) => {
       })
       .then(() => couchdb.del(couchdb.databaseName, rawSecret.id, rawSecret.rev))
       .then(() => {
-        Utils.reason(res, 200, 'Secret deleted');
+        if (usersNotFound.length > 0) {
+          Console.logDesync(usersNotFound);
+          res.json(usersNotFound);
+        } else {
+          Utils.reason(res, 200, 'Secret deleted');
+        }
       })
       .catch((error) => {
         Console.error(res, error);

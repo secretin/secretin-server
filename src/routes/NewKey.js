@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import _ from 'lodash';
 
 import Console from '../console';
 import Utils from '../utils';
@@ -7,6 +8,7 @@ export default ({ couchdb }) => {
   const route = Router();
   route.post('/:name', (req, res) => {
     let jsonBody;
+    let usersNotFound;
     Utils.checkSignature({
       couchdb,
       name: req.params.name,
@@ -42,7 +44,7 @@ export default ({ couchdb }) => {
         const userPromises = [];
         jsonBody.wrappedKeys.forEach((wrappedKey) => {
           userPromises.push(
-            Utils.userExists({ couchdb, name: wrappedKey.user })
+            Utils.userExists({ couchdb, name: wrappedKey.user }, false)
               .then(user => ({
                 user,
                 name: wrappedKey.user,
@@ -52,6 +54,7 @@ export default ({ couchdb }) => {
         return Promise.all(userPromises);
       })
       .then((users) => {
+        usersNotFound = _.remove(users, user => user.user.notFound);
         const userPromises = [];
         users.forEach((user) => {
           const doc = {
@@ -68,7 +71,12 @@ export default ({ couchdb }) => {
         return Promise.all(userPromises);
       })
       .then(() => {
-        Utils.reason(res, 200, 'New key reshared');
+        if (usersNotFound.length > 0) {
+          Console.logDesync(usersNotFound);
+          res.json(usersNotFound);
+        } else {
+          Utils.reason(res, 200, 'New key reshared');
+        }
       })
       .catch((error) => {
         Console.error(res, error);

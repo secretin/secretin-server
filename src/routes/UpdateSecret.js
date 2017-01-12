@@ -6,7 +6,7 @@ import Utils from '../utils';
 export default ({ couchdb }) => {
   const route = Router();
   route.put('/:name', (req, res) => {
-    const jsonBody = JSON.parse(req.body.json);
+    let jsonBody;
     Utils.checkSignature({
       couchdb,
       name: req.params.name,
@@ -14,6 +14,7 @@ export default ({ couchdb }) => {
       data: req.body.json,
     })
       .then((rawUser) => {
+        jsonBody = JSON.parse(req.body.json);
         if (typeof rawUser.data.keys[jsonBody.title].rights !== 'undefined'
             && rawUser.data.keys[jsonBody.title].rights > 0) {
           return Utils.secretExists({ couchdb, title: jsonBody.title });

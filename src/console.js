@@ -4,6 +4,10 @@ function log(e) {
   console.log(e);
 }
 
+function logDesync(e) {
+  log(`DESYNC : ${JSON.stringify(e)}`);
+}
+
 function error(res, err) {
   if (err.code) {
     Utils.reason(res, err.code, err.text);
@@ -26,6 +30,7 @@ function trace(req, res, next) {
 
 const Console = {
   log,
+  logDesync,
   error,
   trace,
 };

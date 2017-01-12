@@ -8,24 +8,30 @@ export default ({ couchdb }) => {
   const route = Router();
   route.post('/:name', (req, res) => {
     let jsonBody;
+    let buggySecretObjects;
     Utils.checkSignature({
       couchdb,
       name: req.params.name,
       sig: req.body.sig,
       data: req.body.json,
     })
-      .then((user) => {
+      .then((rUser) => {
         jsonBody = JSON.parse(req.body.json);
         const secretPromises = [];
         let notYourself;
         jsonBody.secretObjects.forEach((secretObject) => {
           notYourself = (req.params.name !== secretObject.friendName);
-          if (typeof user.data.keys[secretObject.hashedTitle].rights !== 'undefined'
-              && user.data.keys[secretObject.hashedTitle].rights > 1
+          if (typeof rUser.data.keys[secretObject.hashedTitle].rights !== 'undefined'
+              && rUser.data.keys[secretObject.hashedTitle].rights > 1
               && notYourself) {
+            let secret;
             secretPromises.push(
-              Utils.secretExists({ couchdb, title: secretObject.hashedTitle })
-                .then(secret => ({
+              Utils.secretExists({ couchdb, title: secretObject.hashedTitle }, false)
+                .then((rSecret) => {
+                  secret = rSecret;
+                  return Utils.userExists({ couchdb, name: secretObject.friendName }, false);
+                }).then(user => ({
+                  user,
                   secret,
                   secretObject,
                 })));
@@ -49,26 +55,8 @@ export default ({ couchdb }) => {
         }
         return Promise.all(secretPromises);
       })
-      .then((rawSecrets) => {
-        const userPromises = [];
-        rawSecrets.forEach((rawSecret) => {
-          userPromises.push(
-            Utils.userExists({ couchdb, name: rawSecret.secretObject.friendName })
-              .then(user => ({
-                user,
-                secret: rawSecret.secret,
-                secretObject: rawSecret.secretObject,
-              })));
-        });
-        if (userPromises.length === 0) {
-          throw {
-            code: 403,
-            text: 'Friend not found',
-          };
-        }
-        return Promise.all(userPromises);
-      })
       .then((data) => {
+        buggySecretObjects = _.remove(data, datum => datum.user.notFound || datum.secret.notFound);
         const docsSecret = {};
         const docsUser = {};
         data.forEach(({ user, secret, secretObject }) => {
@@ -119,7 +107,12 @@ export default ({ couchdb }) => {
         return Promise.all(promises);
       })
       .then(() => {
-        Utils.reason(res, 200, 'Secret shared');
+        if (buggySecretObjects.length > 0) {
+          Console.logDesync(buggySecretObjects);
+          res.json(buggySecretObjects);
+        } else {
+          Utils.reason(res, 200, 'Secret shared');
+        }
       })
       .catch((error) => {
         Console.error(res, error);

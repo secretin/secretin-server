@@ -40,19 +40,11 @@ export default ({ couchdb }) => {
           notYourself = (req.params.name !== friendName);
           if (notYourself && rawSecret.data.users.indexOf(friendName) !== -1) {
             userPromises.push(
-              Utils.userExists({ couchdb, name: friendName })
+              Utils.userExists({ couchdb, name: friendName }, false)
                 .then(user => ({
                   user,
                   name: friendName,
-                }), (error) => {
-                  if (error.text === 'User not found') {
-                    throw {
-                      code: error.code,
-                      text: 'Friend not found',
-                    };
-                  }
-                  throw error;
-                }));
+                })));
           }
         });
         if (userPromises.length === 0) {
@@ -71,6 +63,7 @@ export default ({ couchdb }) => {
         return Promise.all(userPromises);
       })
       .then((rawUsers) => {
+        const usersNotFound = _.remove(rawUsers, user => user.user.notFound);
         const userPromises = [];
         rawUsers.forEach((rawUser) => {
           if (typeof rawUser.user.data.keys[jsonBody.title] !== 'undefined') {
@@ -89,6 +82,10 @@ export default ({ couchdb }) => {
                     username => (username === rawUser.name));
                 }));
           }
+        });
+        usersNotFound.forEach((userNotFound) => {
+          _.remove(docSecret.secret[jsonBody.title].users,
+            username => (username === userNotFound.name));
         });
         return Promise.all(userPromises);
       })

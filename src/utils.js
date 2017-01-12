@@ -30,30 +30,38 @@ function dataExists(couchdb, view, key) {
     });
 }
 
-function secretExists({ couchdb, title }) {
+function secretExists({ couchdb, title }, throwNotFound = true) {
   const view = '_design/secrets/_view/getSecret';
   return dataExists(couchdb, view, title)
     .catch((error) => {
       if (error === 'Not found') {
-        throw {
-          code: 404,
-          text: 'Secret not found',
-        };
+        if (throwNotFound) {
+          throw {
+            code: 404,
+            text: 'Secret not found',
+          };
+        } else {
+          return { title, notFound: true };
+        }
       } else {
         throw error;
       }
     });
 }
 
-function userExists({ couchdb, name }) {
+function userExists({ couchdb, name }, throwNotFound = true) {
   const view = '_design/users/_view/getUser';
   return dataExists(couchdb, view, name)
     .catch((error) => {
       if (error === 'Not found') {
-        throw {
-          code: 404,
-          text: 'User not found',
-        };
+        if (throwNotFound) {
+          throw {
+            code: 404,
+            text: 'User not found',
+          };
+        } else {
+          return { name, notFound: true };
+        }
       } else {
         throw error;
       }

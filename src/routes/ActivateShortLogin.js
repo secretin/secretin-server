@@ -7,7 +7,7 @@ import Utils from '../utils';
 export default ({ couchdb, redis }) => {
   const route = Router();
   route.put('/:name', (req, res) => {
-    const key = `protectKey_${req.params.name}_${req.params.deviceId}`;
+    let key;
     Utils.checkSignature({
       couchdb,
       name: req.params.name,
@@ -15,6 +15,7 @@ export default ({ couchdb, redis }) => {
       data: req.body.json,
     })
       .then(() => {
+        key = `protectKey_${req.params.name}_${req.params.deviceId}`;
         const jsonBody = JSON.parse(req.body.json);
         const md = forge.md.sha256.create();
         md.update(jsonBody.shortpass.hash);

@@ -4,8 +4,8 @@
   "description": "💾 Server side of Secretin. Keep your data safe.",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon -w src --exec \"babel-node src --presets es2015\"",
-    "build": "babel src -s -D -d dist --presets es2015",
+    "dev": "nodemon -w src --exec \"npm run lint && babel-node src --presets es2015\"",
+    "build": "npm run lint && babel src -s -D -d dist --presets es2015",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npm run build && node dist",
     "lint": "eslint src/"

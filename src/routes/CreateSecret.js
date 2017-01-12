@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import forge from 'node-forge';
 
 import Console from '../console';
 import Utils from '../utils';
@@ -8,7 +7,7 @@ export default ({ couchdb }) => {
   const route = Router();
   route.post('/:name', (req, res) => {
     let rawUser;
-    const jsonBody = JSON.parse(req.body.json);
+    let jsonBody;
     Utils.checkSignature({
       couchdb,
       name: req.params.name,
@@ -16,6 +15,7 @@ export default ({ couchdb }) => {
       data: req.body.json,
     })
       .then((user) => {
+        jsonBody = JSON.parse(req.body.json);
         rawUser = user;
         return Utils.secretExists({ couchdb, title: jsonBody.title });
       })
@@ -51,7 +51,7 @@ export default ({ couchdb }) => {
         doc.user[req.params.name].keys[jsonBody.title] = {
           key: jsonBody.key,
           rights: 2,
-        }
+        };
 
         return couchdb.update(couchdb.databaseName, doc);
       })
