@@ -15,8 +15,8 @@ export default ({ couchdb, redis }) => {
       data: req.body.json,
     })
       .then(() => {
-        key = `protectKey_${req.params.name}_${req.params.deviceId}`;
         const jsonBody = JSON.parse(req.body.json);
+        key = `protectKey_${req.params.name}_${jsonBody.shortpass.deviceId}`;
         const md = forge.md.sha256.create();
         md.update(jsonBody.shortpass.hash);
 

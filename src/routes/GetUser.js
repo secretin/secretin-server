@@ -32,7 +32,13 @@ export default ({ redis, couchdb }) => {
         if (req.params.hash === 'undefined') {
           return Promise.resolve(false);
         }
-        return Utils.checkBruteforce({ redis, ip: req.ip });
+        let ip;
+        if (process.env.BEHIND_PROXY) {
+          ip = req.headers['x-forwarded-for'] || req.ip;
+        } else {
+          ip = req.ip;
+        }
+        return Utils.checkBruteforce({ redis, ip });
       })
       .then((isBruteforce) => {
         submitUser = rawUser.data;
