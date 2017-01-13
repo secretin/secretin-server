@@ -16,4 +16,4 @@ EXPOSE 80
 
 ENTRYPOINT ["/usr/local/bin/dumb-init", "--"]
 
-CMD [ "npm", "start", "80"]
+CMD [ "npm", "start"]

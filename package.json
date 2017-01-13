@@ -1,21 +1,45 @@
 {
   "name": "secretin-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
+  "description": "💾 Server side of Secretin. Keep your data safe.",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "TEST_SERVER=1 nodemon -w src --exec \"npm run lint && babel-node src --presets es2015\"",
+    "build": "npm run lint && babel src -s -D -d dist --presets es2015",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npm run build && node dist",
+    "package": "npm run build && cp package.json dist/ && tar cvzf dist.tar.gz dist",
+    "lint": "eslint src/"
   },
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/secretin/secretin-server.git"
+  },
+  "author": "agix",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/secretin/secretin-server/issues"
+  },
+  "homepage": "https://github.com/secretin/secretin-server#readme",
   "dependencies": {
-    "body-parser": "^1.12.4",
+    "bluebird": "^3.4.7",
+    "body-parser": "^1.15.2",
     "cors": "^2.8.1",
-    "cradle": "^0.7.1",
-    "express": "^4.12.4",
-    "lodash": "^4.15.0",
-    "node-forge": "^0.6.29",
-    "redis": "^2.6.2",
+    "express": "^4.14.0",
+    "lodash": "^4.17.4",
+    "node-couchdb": "^1.1.0",
+    "node-forge": "^0.6.46",
+    "redis": "^2.6.3",
     "speakeasy": "^2.0.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-core": "^6.21.0",
+    "babel-eslint": "^7.1.1",
+    "babel-preset-es2015": "^6.18.0",
+    "eslint": "^3.12.2",
+    "eslint-config-airbnb-base": "^11.0.0",
+    "eslint-plugin-import": "^2.2.0",
+    "nodemon": "^1.11.0"
   }
 }
