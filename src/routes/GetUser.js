@@ -33,7 +33,7 @@ export default ({ redis, couchdb }) => {
           return Promise.resolve(false);
         }
         let ip;
-        if (process.env.BEHIND_PROXY) {
+        if (process.env.BEHIND_REVERSE_PROXY && process.env.BEHIND_REVERSE_PROXY === '1') {
           ip = req.headers['x-forwarded-for'] || req.ip;
         } else {
           ip = req.ip;

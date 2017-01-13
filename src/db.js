@@ -59,7 +59,7 @@ export default (config, callback) => {
     },
   };
 
-  if ((process.env.SECRETIN_SERVER_COUCHDB_AUTH && process.env.SECRETIN_SERVER_COUCHDB_AUTH !== 1)
+  if ((process.env.SECRETIN_SERVER_COUCHDB_AUTH && process.env.SECRETIN_SERVER_COUCHDB_AUTH !== '1')
       || !config.couchDBAuth) {
     delete couchDBConnection.auth;
   }
