@@ -30,6 +30,7 @@
     "node-couchdb": "^1.1.0",
     "node-forge": "^0.6.46",
     "redis": "^2.6.3",
+    "secure-compare": "^3.0.1",
     "speakeasy": "^2.0.0"
   },
   "devDependencies": {

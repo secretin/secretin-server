@@ -2,6 +2,7 @@ import { Router } from 'express';
 import forge from 'node-forge';
 import speakeasy from 'speakeasy';
 import url from 'url';
+import compare from 'secure-compare';
 
 import Console from '../console';
 import Utils from '../utils';
@@ -26,6 +27,8 @@ export default ({ redis, couchdb }) => {
   route.get('/:name/:hash', (req, res) => {
     let rawUser;
     let submitUser;
+    let totpValid;
+    let isBruteforce;
     Utils.userExists({ couchdb, name: req.params.name })
       .then((user) => {
         rawUser = user;
@@ -40,10 +43,14 @@ export default ({ redis, couchdb }) => {
         }
         return Utils.checkBruteforce({ redis, ip });
       })
-      .then((isBruteforce) => {
+      .then((rIsBruteforce) => {
         submitUser = rawUser.data;
+        isBruteforce = rIsBruteforce;
+        if (isBruteforce) {
+          return Promise.resolve();
+        }
 
-        let totpValid = true;
+        totpValid = true;
         if (submitUser.pass.totp && req.params.hash !== 'undefined') {
           totpValid = false;
           const protectedSeed = Utils.hexStringToUint8Array(submitUser.seed);
@@ -54,13 +61,34 @@ export default ({ redis, couchdb }) => {
             encoding: 'hex',
             token: req.query.otp,
           });
-        }
+          if (!totpValid && typeof submitUser.rescueCodes !== 'undefined' && submitUser.rescueCodes.shift() === parseInt(req.query.otp, 10)) {
+            totpValid = true;
+            const doc = {
+              _id: rawUser.id,
+              _rev: rawUser.rev,
+              user: {
+                [req.params.name]: rawUser.data,
+              },
+            };
 
+            doc.user[req.params.name].rescueCodes = submitUser.rescueCodes;
+
+            if (submitUser.rescueCodes.length === 0) {
+              submitUser.pass.totp = false;
+              doc.user[req.params.name].pass.totp = false;
+              delete doc.user[req.params.name].seed;
+              delete doc.user[req.params.name].rescueCodes;
+            }
+            return couchdb.update(couchdb.databaseName, doc);
+          }
+        }
+        return Promise.resolve();
+      }).then(() => {
         const md = forge.md.sha256.create();
         md.update(req.params.hash);
 
-        // if something goes wrong, send fake private key
-        if (!totpValid || isBruteforce || md.digest().toHex() !== submitUser.pass.hash) {
+        const validHash = compare(md.digest().toHex(), submitUser.pass.hash);
+        if (!totpValid || isBruteforce || !validHash) {
           submitUser.privateKey = {
             privateKey: forge.util.bytesToHex(forge.random.getBytesSync(3232)),
             iv: forge.util.bytesToHex(forge.random.getBytesSync(16)),
@@ -75,6 +103,7 @@ export default ({ redis, couchdb }) => {
       .then((allMetadatas) => {
         submitUser.metadatas = allMetadatas;
         delete submitUser.seed;
+        delete submitUser.rescueCodes;
         delete submitUser.pass.hash;
         res.json(submitUser);
       })
@@ -99,6 +128,7 @@ export default ({ redis, couchdb }) => {
         const user = rawUser.data;
         user.metadatas = allMetadatas;
         delete user.seed;
+        delete user.rescueCodes;
         delete user.pass.hash;
         res.json(user);
       })

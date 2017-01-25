@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import forge from 'node-forge';
+import compare from 'secure-compare';
 
 import Console from '../console';
 import Utils from '../utils';
@@ -25,6 +26,9 @@ export default ({ redis, couchdb }) => {
       })
       .then((rIsBruteforce) => {
         isBruteforce = rIsBruteforce;
+        if (isBruteforce) {
+          return Promise.resolve();
+        }
         const key = `protectKey_${req.params.name}_${req.params.deviceId}`;
         return redis.hgetallAsync(key);
       })
@@ -35,7 +39,8 @@ export default ({ redis, couchdb }) => {
         const md = forge.md.sha256.create();
         md.update(req.params.hash);
 
-        if (!content || isBruteforce || md.digest().toHex() !== content.hash) {
+        const validHash = compare(md.digest().toHex(), content.hash);
+        if (!content || isBruteforce || !validHash) {
           if (!content) {
             content = {
               salt: forge.util.bytesToHex(forge.random.getBytesSync(32)),
