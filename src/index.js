@@ -25,6 +25,7 @@ import unshare from './routes/Unshare';
 import share from './routes/Share';
 import testTotp from './routes/TestTotp';
 import reset from './routes/Reset';
+import getRescueCodes from './routes/GetRescueCodes';
 
 const app = express();
 app.server = http.createServer(app);
@@ -46,6 +47,7 @@ initializeDb(config, (couchdb, redis) => {
   app.use('/user', updateUser({ couchdb, redis }));
   app.use('/protectKey', getProtectKey({ couchdb, redis }));
   app.use('/activateTotp', activateTotp({ couchdb, redis }));
+  app.use('/rescueCodes', getRescueCodes({ couchdb, redis }));
   app.use('/deactivateTotp', deactivateTotp({ couchdb, redis }));
   app.use('/activateShortLogin', activateShortLogin({ couchdb, redis }));
   app.use('/secret', getSecret({ couchdb, redis }));
