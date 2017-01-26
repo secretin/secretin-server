@@ -34,19 +34,16 @@ DAEMON_DIR="/home/secretin/dist/"
 DAEMON_LOGDIR="/home/secretin/"
 DAEMON_UID="secretin"
 DAEMON_NAME="secretin"
+PORT=3000
 REDIS_URL="redis://anonymous@your-redis-server:6379"
-COUCHDB_HOST="your-couchdb-server"
-COUCHDB_DBNAME="secretin"
-COUCHDB_USER="user"
-COUCHDB_PASS="pass"
+COUCHDB_URL="http://admin:pass@your-couchdb-server:5984/databasename"
 BEHIND_REVERSE_PROXY=0
 
 case "$1" in
   start)
   echo "Starting $DAEMON_NAME..."
-  sudo -H -u secretin BEHIND_REVERSE_PROXY=$BEHIND_REVERSE_PROXY SECRETIN_SERVER_COUCHDB_USER=$COUCHDB_USER SECRETIN_SERVER_COUCHDB_PASS=$COUCHDB_PASS SECRETIN_SERVER_REDIS_URL=$REDIS_URL \
-	SECRETIN_SERVER_COUCHDB_HOST=$COUCHDB_HOST SECRETIN_SERVER_COUCHDB_DBNAME="secretintest" \
-	forever start --sourceDir=$DAEMON_DIR --workingDir=$DAEMON_DIR -a -o $DAEMON_LOGDIR"access.log" -e $DAEMON_LOGDIR"error.log" --uid $DAEMON_UID index.js
+  sudo -H -u secretin BEHIND_REVERSE_PROXY=$BEHIND_REVERSE_PROXY SECRETIN_SERVER_PORT=$PORT SECRETIN_SERVER_COUCHDB_URL=$COUCHDB_URL SECRETIN_SERVER_REDIS_URL=$REDIS_URL \
+      forever start --sourceDir=$DAEMON_DIR --workingDir=$DAEMON_DIR -a -o $DAEMON_LOGDIR"access.log" -e $DAEMON_LOGDIR"error.log" --uid $DAEMON_UID index.js
   ;;
 
   stop)

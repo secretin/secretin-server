@@ -1,6 +1,7 @@
 import CouchDB from 'node-couchdb';
 import Redis from 'redis';
 import bluebird from 'bluebird';
+import url from 'url';
 
 bluebird.promisifyAll(Redis.RedisClient.prototype);
 bluebird.promisifyAll(Redis.Multi.prototype);
@@ -49,24 +50,24 @@ export function createViews(couchdb) {
 export default (config, callback) => {
   const redisClient = Redis.createClient(
     process.env.SECRETIN_SERVER_REDIS_URL || config.redisConnection || null);
+  const couchdbUrl = url.parse(process.env.SECRETIN_SERVER_COUCHDB_URL || config.couchdbConnection);
+
   const couchDBConnection = {
-    host: process.env.SECRETIN_SERVER_COUCHDB_HOST || config.couchDBConnection.host,
-    port: process.env.SECRETIN_SERVER_COUCHDB_PORT || config.couchDBConnection.port,
-    protocol: process.env.SECRETIN_SERVER_COUCHDB_PROTOCOL || config.couchDBConnection.protocol,
-    auth: {
-      user: process.env.SECRETIN_SERVER_COUCHDB_USER || config.couchDBConnection.auth.user,
-      pass: process.env.SECRETIN_SERVER_COUCHDB_PASS || config.couchDBConnection.auth.pass,
-    },
+    host: couchdbUrl.hostname,
+    port: couchdbUrl.port,
+    protocol: couchdbUrl.protocol.substring(0, couchdbUrl.protocol.length - 1),
   };
 
-  if ((process.env.SECRETIN_SERVER_COUCHDB_AUTH && process.env.SECRETIN_SERVER_COUCHDB_AUTH !== '1')
-      || !config.couchDBAuth) {
-    delete couchDBConnection.auth;
+  if (couchdbUrl.auth) {
+    const [user, pass] = couchdbUrl.auth.split(':');
+    couchDBConnection.auth = {
+      user,
+      pass,
+    };
   }
 
   const couchDBClient = new CouchDB(couchDBConnection);
-  couchDBClient.databaseName = process.env.SECRETIN_SERVER_COUCHDB_DBNAME || process.env.TEST_SERVER ? `${config.couchDBName}test` : config.couchDBName;
-
+  couchDBClient.databaseName = process.env.TEST_SERVER ? `${couchdbUrl.pathname.substr(1)}test` : couchdbUrl.pathname.substr(1);
   couchDBClient.createDatabase(couchDBClient.databaseName)
     .then(() => createViews(couchDBClient)
     , (error) => {
