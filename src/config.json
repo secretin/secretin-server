@@ -1,15 +1,5 @@
 {
   "port": 3000,
   "redisConnection": "redis://127.0.0.1:6379",
-  "couchDBName": "secretin",
-  "couchDBAuth": false,
-  "couchDBConnection": {
-    "host": "127.0.0.1",
-    "protocol": "http",
-    "port": 5984,
-    "auth": {
-      "user": "admin",
-      "pass": "pass"
-    }
-  }
+  "couchdbConnection": "http://admin:pass@127.0.0.1:5984/secretin"
 }
