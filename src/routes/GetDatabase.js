@@ -1,48 +1,47 @@
 import { Router } from 'express';
-import url from 'url';
-import _ from 'lodash';
 
 import Console from '../console';
 import Utils from '../utils';
 
+function getDatabase(couchdb, name) {
+  const view = '_design/secrets/_view/getDatabase';
+  return couchdb.get(couchdb.databaseName, view, { key: name })
+    .then(({ data }) =>
+      data.rows.reduce((secrets, { value }) => Object.assign(secrets, value), {}));
+}
 
 export default ({ couchdb }) => {
   const route = Router();
-  route.get('/:name', (req, res) => {
+
+  route.post('/:name', (req, res) => {
     let rawUser;
+    let jsonBody;
     const db = { users: {}, secrets: {} };
     Utils.checkSignature({
       couchdb,
       name: req.params.name,
-      sig: req.query.sig,
-      data: `${req.baseUrl}${url.parse(req.url).pathname}`,
+      sig: req.body.sig,
+      data: req.body.json,
     })
       .then((user) => {
         rawUser = user;
+        jsonBody = JSON.parse(req.body.json);
         db.users[req.params.name] = rawUser.data;
-        const hashedTitles = Object.keys(rawUser.data.keys);
-        const secretPromises = [];
-        if (hashedTitles.length !== 0) {
-          hashedTitles.forEach((hashedTitle) => {
-            secretPromises.push(
-              Utils.secretExists({ couchdb, title: hashedTitle }, false)
-                .then(secret => ({
-                  secret,
-                  title: hashedTitle,
-                })));
-          });
-          return Promise.all(secretPromises);
-        }
-        return Promise.resolve([]);
+        return getDatabase(couchdb, req.params.name);
       })
       .then((secrets) => {
-        _.remove(secrets, secret => secret.secret.notFound);
-        secrets.forEach((rawSecret) => {
-          const secret = rawSecret.secret.data;
-          db.secrets[rawSecret.title] = secret;
-          db.secrets[rawSecret.title].users = [req.params.name];
+        const updatedSecrets = {};
+        Object.keys(secrets).forEach((key) => {
+          if (typeof jsonBody[key] === 'undefined' || jsonBody[key] !== secrets[key].rev) {
+            updatedSecrets[key] = secrets[key];
+          }
         });
-
+        Object.keys(jsonBody).forEach((key) => {
+          if (typeof secrets[key] === 'undefined') {
+            updatedSecrets[key] = false;
+          }
+        });
+        db.secrets = updatedSecrets;
         res.json(db);
       })
       .catch((error) => {
