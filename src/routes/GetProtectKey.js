@@ -39,14 +39,15 @@ export default ({ redis, couchdb }) => {
         const md = forge.md.sha256.create();
         md.update(req.params.hash);
 
+        if (!content) {
+          content = {
+            salt: forge.util.bytesToHex(forge.random.getBytesSync(32)),
+            iterations: 10000,
+            hash: '',
+          };
+        }
         const validHash = compare(md.digest().toHex(), content.hash);
         if (!content || isBruteforce || !validHash) {
-          if (!content) {
-            content = {
-              salt: forge.util.bytesToHex(forge.random.getBytesSync(32)),
-              iterations: 10000,
-            };
-          }
           content.protectKey = forge.util.bytesToHex(forge.random.getBytesSync(128));
         }
         delete content.hash;
