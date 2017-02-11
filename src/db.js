@@ -12,23 +12,53 @@ export function createViews(couchdb) {
     language: 'javascript',
     views: {
       getSecret: {
-        map: `function (doc) {
-                if(doc.secret){
-                  var key = Object.keys(doc.secret)[0];
-                  emit(key, {res: doc.secret[key], rev: doc._rev});
-                }
-              }`,
+// VIEW getSecret
+        map: `
+function (doc) {
+  if(doc.secret){
+    var key = Object.keys(doc.secret)[0];
+    emit(key, {res: doc.secret[key], rev: doc._rev});
+  }
+}
+            `,
+// END VIEW
       },
       getMetadatas: {
-        map: `function (doc) {
-                if(doc.secret){
-                  var key = Object.keys(doc.secret)[0];
-                  var res = doc.secret[key].users;
-                  doc.secret[key].users.forEach(function(user){
-                    emit(user, {res: {title: key, iv_meta: doc.secret[key].iv_meta, metadatas: doc.secret[key].metadatas}, rev: doc._rev});
-                  });
-                }
-              }`,
+// VIEW getMetadatas
+        map: `
+function (doc) {
+  if(doc.secret){
+    var key = Object.keys(doc.secret)[0];
+    doc.secret[key].users.forEach(function(user){
+      var res = {};
+      res[key] = {
+        iv: doc.secret[key].iv_meta,
+        secret: doc.secret[key].metadatas,
+      };
+      emit(user, res);
+    });
+  }
+}
+            `,
+// END VIEW
+      },
+      getDatabase: {
+// VIEW getDatabase
+        map: `
+function (doc) {
+  if(doc.secret){
+    var key = Object.keys(doc.secret)[0];
+    doc.secret[key].users.forEach(function(user){
+      var res = {};
+      res[key] = JSON.parse(JSON.stringify(doc.secret[key]));
+      res[key].users = [user];
+      res[key].rev = doc._rev;
+      emit(user, res);
+    });
+  }
+}
+            `,
+// END VIEW
       },
     },
   }).then(() => couchdb.insert(couchdb.databaseName, {
@@ -36,12 +66,16 @@ export function createViews(couchdb) {
     language: 'javascript',
     views: {
       getUser: {
-        map: `function (doc) {
-                if(doc.user){
-                  var key = Object.keys(doc.user)[0];
-                  emit(key, {res: doc.user[key], rev: doc._rev});
-                }
-              }`,
+// VIEW getUser
+        map: `
+function (doc) {
+  if(doc.user){
+    var key = Object.keys(doc.user)[0];
+    emit(key, {res: doc.user[key], rev: doc._rev});
+  }
+}
+            `,
+// END VIEW
       },
     },
   }));

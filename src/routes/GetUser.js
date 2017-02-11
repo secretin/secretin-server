@@ -10,16 +10,8 @@ import Utils from '../utils';
 function getAllMetadatas(couchdb, name) {
   const view = '_design/secrets/_view/getMetadatas';
   return couchdb.get(couchdb.databaseName, view, { key: name })
-    .then(({ data }) => {
-      const allMetadatas = {};
-      data.rows.forEach((row) => {
-        allMetadatas[row.value.res.title] = {
-          iv: row.value.res.iv_meta,
-          secret: row.value.res.metadatas,
-        };
-      });
-      return allMetadatas;
-    });
+    .then(({ data }) =>
+      data.rows.reduce((allMetadatas, { value }) => Object.assign(allMetadatas, value), {}));
 }
 
 export default ({ redis, couchdb }) => {

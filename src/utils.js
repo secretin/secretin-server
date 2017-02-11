@@ -141,7 +141,10 @@ function checkSignature({ couchdb, name, sig, data }) {
       const n = new Buffer(user.publicKey.n, 'base64');
       const e = new Buffer(user.publicKey.e, 'base64');
 
-      const publicKey = rsa.setPublicKey(new BigInteger(n.toString('hex'), 16), new BigInteger(e.toString('hex'), 16));
+      const publicKey = rsa.setPublicKey(
+        new BigInteger(n.toString('hex'), 16),
+        new BigInteger(e.toString('hex'), 16),
+      );
       const signature = new Buffer(sig, 'hex');
 
       const pss = forge.pss.create({
