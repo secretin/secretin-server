@@ -12,6 +12,7 @@ import getUser from './routes/GetUser';
 import getProtectKey from './routes/GetProtectKey';
 import getDatabase from './routes/GetDatabase';
 import getSecret from './routes/GetSecret';
+import getHistory from './routes/GetHistory';
 import createUser from './routes/CreateUser';
 import createSecret from './routes/CreateSecret';
 import deleteSecret from './routes/DeleteSecret';
@@ -54,6 +55,7 @@ initializeDb(config, (couchdb, redis) => {
   app.use('/secret', createSecret({ couchdb, redis }));
   app.use('/secret', updateSecret({ couchdb, redis }));
   app.use('/secret', deleteSecret({ couchdb, redis }));
+  app.use('/history', getHistory({ couchdb, redis }));
   app.use('/share', share({ couchdb, redis }));
   app.use('/unshare', unshare({ couchdb, redis }));
   app.use('/newKey', newKey({ couchdb, redis }));

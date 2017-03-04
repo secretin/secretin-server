@@ -28,9 +28,8 @@ export default ({ couchdb }) => {
       .catch((error) => {
         if (error.text === 'Secret not found') {
           return {
-            secret: forge.util.bytesToHex((forge.random.getBytesSync(128))),
-            iv: forge.util.bytesToHex((forge.random.getBytesSync(16))),
-            users: [req.params.name],
+            history: forge.util.bytesToHex((forge.random.getBytesSync(128))),
+            iv_history: forge.util.bytesToHex((forge.random.getBytesSync(16))),
           };
         }
         throw error;
@@ -39,8 +38,9 @@ export default ({ couchdb }) => {
         const newSecret = secret;
         delete newSecret.metadatas;
         delete newSecret.iv_meta;
-        delete newSecret.history;
-        delete newSecret.iv_history;
+        delete newSecret.users;
+        delete newSecret.secret;
+        delete newSecret.iv;
         res.json(newSecret);
       })
       .catch((error) => {
