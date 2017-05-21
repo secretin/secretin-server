@@ -18,24 +18,18 @@ export default ({ couchdb }) => {
         const user = rawUser.data;
 
         if (user.pass.totp) {
-          /* Retrocompatibility */
-          if (typeof user.rescueCodes === 'undefined') {
-            const doc = {
-              _id: rawUser.id,
-              _rev: rawUser.rev,
-              user: {
-                [req.params.name]: rawUser.data,
-              },
-            };
-            rescueCodes = Utils.generateRescueCodes();
-            doc.user[req.params.name].rescueCodes = rescueCodes;
-            return couchdb.update(couchdb.databaseName, doc);
-          }
-          /* End retrocompatibility */
-          rescueCodes = user.rescueCodes;
-        } else {
-          rescueCodes = [];
+          const doc = {
+            _id: rawUser.id,
+            _rev: rawUser.rev,
+            user: {
+              [req.params.name]: rawUser.data,
+            },
+          };
+          rescueCodes = Utils.generateRescueCodes();
+          doc.user[req.params.name].rescueCodes = rescueCodes;
+          return couchdb.update(couchdb.databaseName, doc);
         }
+        rescueCodes = [];
         return Promise.resolve();
       })
       .then(() => {
