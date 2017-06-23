@@ -11,6 +11,7 @@ export default ({ couchdb }) => {
       .then(
         () => {
           Utils.reason(res, 403, 'User already exists');
+          throw 'User already exists';
         },
         error => {
           if (error.text === 'User not found') {
@@ -24,7 +25,7 @@ export default ({ couchdb }) => {
             doc.user[req.params.name].pass.hash = md.digest().toHex();
             return couchdb.insert(couchdb.databaseName, doc);
           }
-          throw error;
+          return Promise.reject(error);
         }
       )
       .then(() => {
