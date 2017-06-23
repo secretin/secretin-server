@@ -4,49 +4,61 @@ import _ from 'lodash';
 import Console from '../console';
 import Utils from '../utils';
 
-export default ({ couchdb }) => {
+export default ({ couchdb, redis }) => {
   const route = Router();
   route.post('/:name', (req, res) => {
     let jsonBody;
     let buggySecretObjects;
     Utils.checkSignature({
       couchdb,
+      redis,
       name: req.params.name,
       sig: req.body.sig,
-      data: req.body.json,
+      data: `${req.body.json}|${req.body.sigTime}`,
     })
-      .then((rUser) => {
+      .then(rUser => {
         jsonBody = JSON.parse(req.body.json);
         const secretPromises = [];
         let notYourself;
-        jsonBody.secretObjects.forEach((secretObject) => {
-          notYourself = (req.params.name !== secretObject.friendName);
-          if (typeof rUser.data.keys[secretObject.hashedTitle].rights !== 'undefined'
-              && rUser.data.keys[secretObject.hashedTitle].rights > 1
-              && notYourself) {
+        jsonBody.secretObjects.forEach(secretObject => {
+          notYourself = req.params.name !== secretObject.friendName;
+          if (
+            typeof rUser.data.keys[secretObject.hashedTitle].rights !==
+              'undefined' &&
+            rUser.data.keys[secretObject.hashedTitle].rights > 1 &&
+            notYourself
+          ) {
             let secret;
             secretPromises.push(
-              Utils.secretExists({ couchdb, title: secretObject.hashedTitle }, false)
-                .then((rSecret) => {
+              Utils.secretExists(
+                { couchdb, title: secretObject.hashedTitle },
+                false
+              )
+                .then(rSecret => {
                   secret = rSecret;
-                  return Utils.userExists({ couchdb, name: secretObject.friendName }, false);
-                }).then(user => ({
+                  return Utils.userExists(
+                    { couchdb, name: secretObject.friendName },
+                    false
+                  );
+                })
+                .then(user => ({
                   user,
                   secret,
                   secretObject,
-                })));
+                }))
+            );
           }
         });
         if (secretPromises.length === 0) {
           let text;
           let code = 403;
           if (!notYourself && jsonBody.secretObjects.length === 1) {
-            text = 'You can\'t share with yourself';
+            text = "You can't share with yourself";
           } else if (jsonBody.secretObjects.length === 0) {
             text = 'Nothing to do';
             code = 200;
           } else {
-            text = 'You can\'t share this secret';
+            text = "You can't share this secret";
           }
           throw {
             code,
@@ -55,8 +67,11 @@ export default ({ couchdb }) => {
         }
         return Promise.all(secretPromises);
       })
-      .then((data) => {
-        buggySecretObjects = _.remove(data, datum => datum.user.notFound || datum.secret.notFound);
+      .then(data => {
+        buggySecretObjects = _.remove(
+          data,
+          datum => datum.user.notFound || datum.secret.notFound
+        );
         const docsSecret = {};
         const docsUser = {};
         data.forEach(({ user, secret, secretObject }) => {
@@ -73,8 +88,12 @@ export default ({ couchdb }) => {
             };
             docsSecret[secret.id] = docSecret;
           }
-          docSecret.secret[secretObject.hashedTitle].users.push(secretObject.friendName);
-          const uniqUsers = _.uniq(docSecret.secret[secretObject.hashedTitle].users);
+          docSecret.secret[secretObject.hashedTitle].users.push(
+            secretObject.friendName
+          );
+          const uniqUsers = _.uniq(
+            docSecret.secret[secretObject.hashedTitle].users
+          );
           docSecret.secret[secretObject.hashedTitle].users = uniqUsers;
 
           let docUser;
@@ -91,17 +110,19 @@ export default ({ couchdb }) => {
             docsUser[user.id] = docUser;
           }
 
-          docUser.user[secretObject.friendName].keys[secretObject.hashedTitle] = {
+          docUser.user[secretObject.friendName].keys[
+            secretObject.hashedTitle
+          ] = {
             key: secretObject.wrappedKey,
             rights: secretObject.rights,
           };
         });
 
         const promises = [];
-        Object.keys(docsUser).forEach((id) => {
+        Object.keys(docsUser).forEach(id => {
           promises.push(couchdb.update(couchdb.databaseName, docsUser[id]));
         });
-        Object.keys(docsSecret).forEach((id) => {
+        Object.keys(docsSecret).forEach(id => {
           promises.push(couchdb.update(couchdb.databaseName, docsSecret[id]));
         });
         return Promise.all(promises);
@@ -114,7 +135,7 @@ export default ({ couchdb }) => {
           Utils.reason(res, 200, 'Secret shared');
         }
       })
-      .catch((error) => {
+      .catch(error => {
         Console.error(res, error);
       });
   });

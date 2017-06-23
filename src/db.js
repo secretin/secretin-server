@@ -7,13 +7,14 @@ bluebird.promisifyAll(Redis.RedisClient.prototype);
 bluebird.promisifyAll(Redis.Multi.prototype);
 
 export function createViews(couchdb) {
-  return couchdb.insert(couchdb.databaseName, {
-    _id: '_design/secrets',
-    language: 'javascript',
-    views: {
-      getSecret: {
-// VIEW getSecret
-        map: `
+  return couchdb
+    .insert(couchdb.databaseName, {
+      _id: '_design/secrets',
+      language: 'javascript',
+      views: {
+        getSecret: {
+          // VIEW getSecret
+          map: `
 function (doc) {
   if(doc.secret){
     var key = Object.keys(doc.secret)[0];
@@ -21,11 +22,11 @@ function (doc) {
   }
 }
             `,
-// END VIEW
-      },
-      getMetadatas: {
-// VIEW getMetadatas
-        map: `
+          // END VIEW
+        },
+        getMetadatas: {
+          // VIEW getMetadatas
+          map: `
 function (doc) {
   if(doc.secret){
     var key = Object.keys(doc.secret)[0];
@@ -40,11 +41,11 @@ function (doc) {
   }
 }
             `,
-// END VIEW
-      },
-      getDatabase: {
-// VIEW getDatabase
-        map: `
+          // END VIEW
+        },
+        getDatabase: {
+          // VIEW getDatabase
+          map: `
 function (doc) {
   if(doc.secret){
     var key = Object.keys(doc.secret)[0];
@@ -58,16 +59,18 @@ function (doc) {
   }
 }
             `,
-// END VIEW
+          // END VIEW
+        },
       },
-    },
-  }).then(() => couchdb.insert(couchdb.databaseName, {
-    _id: '_design/users',
-    language: 'javascript',
-    views: {
-      getUser: {
-// VIEW getUser
-        map: `
+    })
+    .then(() =>
+      couchdb.insert(couchdb.databaseName, {
+        _id: '_design/users',
+        language: 'javascript',
+        views: {
+          getUser: {
+            // VIEW getUser
+            map: `
 function (doc) {
   if(doc.user){
     var key = Object.keys(doc.user)[0];
@@ -75,16 +78,19 @@ function (doc) {
   }
 }
             `,
-// END VIEW
-      },
-    },
-  }));
+            // END VIEW
+          },
+        },
+      }));
 }
 
 export default (config, callback) => {
   const redisClient = Redis.createClient(
-    process.env.SECRETIN_SERVER_REDIS_URL || config.redisConnection || null);
-  const couchdbUrl = url.parse(process.env.SECRETIN_SERVER_COUCHDB_URL || config.couchdbConnection);
+    process.env.SECRETIN_SERVER_REDIS_URL || config.redisConnection || null
+  );
+  const couchdbUrl = url.parse(
+    process.env.SECRETIN_SERVER_COUCHDB_URL || config.couchdbConnection
+  );
 
   const couchDBConnection = {
     host: couchdbUrl.hostname,
@@ -101,16 +107,21 @@ export default (config, callback) => {
   }
 
   const couchDBClient = new CouchDB(couchDBConnection);
-  couchDBClient.databaseName = process.env.TEST_SERVER ? `${couchdbUrl.pathname.substr(1)}test` : couchdbUrl.pathname.substr(1);
-  couchDBClient.createDatabase(couchDBClient.databaseName)
-    .then(() => createViews(couchDBClient)
-    , (error) => {
-      if (error.code !== 'EDBEXISTS') {
-        throw error;
+  couchDBClient.databaseName = process.env.TEST_SERVER
+    ? `${couchdbUrl.pathname.substr(1)}test`
+    : couchdbUrl.pathname.substr(1);
+  couchDBClient
+    .createDatabase(couchDBClient.databaseName)
+    .then(
+      () => createViews(couchDBClient),
+      error => {
+        if (error.code !== 'EDBEXISTS') {
+          throw error;
+        }
       }
-    })
+    )
     .then(() => callback(couchDBClient, redisClient))
-    .catch((error) => {
+    .catch(error => {
       throw error;
     });
 };

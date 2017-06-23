@@ -5,12 +5,14 @@ import Utils from '../utils';
 
 function getDatabase(couchdb, name) {
   const view = '_design/secrets/_view/getDatabase';
-  return couchdb.get(couchdb.databaseName, view, { key: name })
+  return couchdb
+    .get(couchdb.databaseName, view, { key: name })
     .then(({ data }) =>
-      data.rows.reduce((secrets, { value }) => Object.assign(secrets, value), {}));
+      data.rows.reduce((secrets, { value }) => Object.assign(secrets, value), {
+      }));
 }
 
-export default ({ couchdb }) => {
+export default ({ couchdb, redis }) => {
   const route = Router();
 
   route.post('/:name', (req, res) => {
@@ -19,24 +21,28 @@ export default ({ couchdb }) => {
     const db = { users: {}, secrets: {} };
     Utils.checkSignature({
       couchdb,
+      redis,
       name: req.params.name,
       sig: req.body.sig,
-      data: req.body.json,
+      data: `${req.body.json}|${req.body.sigTime}`,
     })
-      .then((user) => {
+      .then(user => {
         rawUser = user;
         jsonBody = JSON.parse(req.body.json);
         db.users[req.params.name] = rawUser.data;
         return getDatabase(couchdb, req.params.name);
       })
-      .then((secrets) => {
+      .then(secrets => {
         const updatedSecrets = {};
-        Object.keys(secrets).forEach((key) => {
-          if (typeof jsonBody[key] === 'undefined' || jsonBody[key] !== secrets[key].rev) {
+        Object.keys(secrets).forEach(key => {
+          if (
+            typeof jsonBody[key] === 'undefined' ||
+            jsonBody[key] !== secrets[key].rev
+          ) {
             updatedSecrets[key] = secrets[key];
           }
         });
-        Object.keys(jsonBody).forEach((key) => {
+        Object.keys(jsonBody).forEach(key => {
           if (typeof secrets[key] === 'undefined') {
             updatedSecrets[key] = false;
           }
@@ -44,7 +50,7 @@ export default ({ couchdb }) => {
         db.secrets = updatedSecrets;
         res.json(db);
       })
-      .catch((error) => {
+      .catch(error => {
         Console.error(res, error);
       });
   });

@@ -3,45 +3,49 @@ import { Router } from 'express';
 import Console from '../console';
 import Utils from '../utils';
 
-export default ({ couchdb }) => {
+export default ({ couchdb, redis }) => {
   const route = Router();
   route.post('/:name', (req, res) => {
     let rawUser;
     let jsonBody;
     Utils.checkSignature({
       couchdb,
+      redis,
       name: req.params.name,
       sig: req.body.sig,
-      data: req.body.json,
+      data: `${req.body.json}|${req.body.sigTime}`,
     })
-      .then((user) => {
+      .then(user => {
         jsonBody = JSON.parse(req.body.json);
         rawUser = user;
         return Utils.secretExists({ couchdb, title: jsonBody.title });
       })
-      .then(() => {
-        Utils.reason(res, 403, 'Secret already exists');
-        throw 'Secret already exists';
-      }, (error) => {
-        if (error.text === 'Secret not found') {
-          const doc = {
-            secret: {
-              [jsonBody.title]: {
-                secret: jsonBody.secret,
-                iv: jsonBody.iv,
-                metadatas: jsonBody.metadatas,
-                iv_meta: jsonBody.iv_meta,
-                history: jsonBody.history,
-                iv_history: jsonBody.iv_history,
-                users: [req.params.name],
+      .then(
+        () => {
+          Utils.reason(res, 403, 'Secret already exists');
+          throw 'Secret already exists';
+        },
+        error => {
+          if (error.text === 'Secret not found') {
+            const doc = {
+              secret: {
+                [jsonBody.title]: {
+                  secret: jsonBody.secret,
+                  iv: jsonBody.iv,
+                  metadatas: jsonBody.metadatas,
+                  iv_meta: jsonBody.iv_meta,
+                  history: jsonBody.history,
+                  iv_history: jsonBody.iv_history,
+                  users: [req.params.name],
+                },
               },
-            },
-          };
+            };
 
-          return couchdb.insert(couchdb.databaseName, doc);
+            return couchdb.insert(couchdb.databaseName, doc);
+          }
+          throw error;
         }
-        throw error;
-      })
+      )
       .then(() => {
         const doc = {
           _id: rawUser.id,
@@ -58,13 +62,16 @@ export default ({ couchdb }) => {
 
         return couchdb.update(couchdb.databaseName, doc);
       })
-      .then(() => {
-        Utils.reason(res, 200, 'New secret saved');
-      }, (error) => {
-        Console.log(`SHOULD REMOVE SECRET ${jsonBody.title}!`);
-        throw error;
-      })
-      .catch((error) => {
+      .then(
+        () => {
+          Utils.reason(res, 200, 'New secret saved');
+        },
+        error => {
+          Console.log(`SHOULD REMOVE SECRET ${jsonBody.title}!`);
+          throw error;
+        }
+      )
+      .catch(error => {
         Console.error(res, error);
       });
   });
