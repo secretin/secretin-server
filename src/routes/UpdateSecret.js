@@ -36,6 +36,8 @@ export default ({ couchdb }) => {
         doc.secret[jsonBody.title].secret = jsonBody.secret;
         doc.secret[jsonBody.title].iv_meta = jsonBody.iv_meta;
         doc.secret[jsonBody.title].metadatas = jsonBody.metadatas;
+        doc.secret[jsonBody.title].history = jsonBody.history;
+        doc.secret[jsonBody.title].iv_history = jsonBody.iv_history;
         return couchdb.update(couchdb.databaseName, doc);
       })
       .then(() => {

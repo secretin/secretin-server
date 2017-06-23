@@ -21,6 +21,7 @@ export default ({ couchdb }) => {
       })
       .then(() => {
         Utils.reason(res, 403, 'Secret already exists');
+        throw 'Secret already exists';
       }, (error) => {
         if (error.text === 'Secret not found') {
           const doc = {
@@ -30,6 +31,8 @@ export default ({ couchdb }) => {
                 iv: jsonBody.iv,
                 metadatas: jsonBody.metadatas,
                 iv_meta: jsonBody.iv_meta,
+                history: jsonBody.history,
+                iv_history: jsonBody.iv_history,
                 users: [req.params.name],
               },
             },
