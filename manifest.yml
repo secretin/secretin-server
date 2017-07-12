@@ -1,0 +1,7 @@
+---
+applications:
+- name: secret-in.me
+  memory: 512M
+  instances: 1
+  random-route: true
+  command: node ./

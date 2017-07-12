@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "TEST_SERVER=1 nodemon -w src --exec \"npm run lint && babel-node src --presets es2015\"",
-    "build": "npm run lint && babel src -s -D -d dist --presets es2015",
+    "build": "npm run lint && babel src -s -D -d dist --presets es2015 && cp manifest.yml dist/",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npm run build && node dist",
     "package": "npm run build && cp package.json dist/ && tar cvzf dist.tar.gz dist",
