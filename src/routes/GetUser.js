@@ -85,15 +85,10 @@ export default ({ redis, couchdb }) => {
             privateKey: forge.util.bytesToHex(forge.random.getBytesSync(3232)),
             iv: forge.util.bytesToHex(forge.random.getBytesSync(16)),
           };
-          submitUser.keys = {};
-          submitUser.options = { options: '', signature: '' };
-          return Promise.resolve({});
         }
 
-        return getAllMetadatas(couchdb, req.params.name);
-      })
-      .then((allMetadatas) => {
-        submitUser.metadatas = allMetadatas;
+        delete submitUser.options;
+        delete submitUser.keys;
         delete submitUser.seed;
         delete submitUser.rescueCodes;
         delete submitUser.pass.hash;

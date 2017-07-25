@@ -10,6 +10,7 @@ export default ({ couchdb }) => {
     Utils.userExists({ couchdb, name: req.params.name })
       .then(() => {
         Utils.reason(res, 403, 'User already exists');
+        throw 'User already exists';
       }, (error) => {
         if (error.text === 'User not found') {
           const doc = {
