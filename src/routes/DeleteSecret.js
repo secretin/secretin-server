@@ -16,7 +16,8 @@ export default ({ couchdb, redis }) => {
       redis,
       name: req.params.name,
       sig: req.body.sig,
-      data: `DELETE ${req.baseUrl}${url.parse(req.url).pathname}|${req.body.sigTime}`,
+      data: `DELETE ${req.baseUrl}${url.parse(req.url).pathname}|${req.body
+        .sigTime}`,
     })
       .then(user => {
         rawUser = user;
@@ -64,7 +65,8 @@ export default ({ couchdb, redis }) => {
         return Promise.all(userPromises);
       })
       .then(() =>
-        couchdb.del(couchdb.databaseName, rawSecret.id, rawSecret.rev))
+        couchdb.del(couchdb.databaseName, rawSecret.id, rawSecret.rev)
+      )
       .then(() => {
         if (usersNotFound.length > 0) {
           Console.logDesync(usersNotFound);
