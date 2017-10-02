@@ -11,7 +11,8 @@ function reason(res, code, text) {
 }
 
 function dataExists(couchdb, view, key) {
-  return couchdb.get(couchdb.databaseName, view, { key })
+  return couchdb
+    .get(couchdb.databaseName, view, { key })
     .then(({ data }) => {
       if (data.rows.length === 1) {
         return {
@@ -22,7 +23,7 @@ function dataExists(couchdb, view, key) {
       }
       throw 'Not found';
     })
-    .catch((error) => {
+    .catch(error => {
       if (error.code === 'EDOCMISSING') {
         throw 'Not found';
       }
@@ -32,46 +33,45 @@ function dataExists(couchdb, view, key) {
 
 function secretExists({ couchdb, title }, throwNotFound = true) {
   const view = '_design/secrets/_view/getSecret';
-  return dataExists(couchdb, view, title)
-    .catch((error) => {
-      if (error === 'Not found') {
-        if (throwNotFound) {
-          throw {
-            code: 404,
-            text: 'Secret not found',
-          };
-        } else {
-          return { title, notFound: true };
-        }
+  return dataExists(couchdb, view, title).catch(error => {
+    if (error === 'Not found') {
+      if (throwNotFound) {
+        throw {
+          code: 404,
+          text: 'Secret not found',
+        };
       } else {
-        throw error;
+        return { title, notFound: true };
       }
-    });
+    } else {
+      throw error;
+    }
+  });
 }
 
 function userExists({ couchdb, name }, throwNotFound = true) {
   const view = '_design/users/_view/getUser';
-  return dataExists(couchdb, view, name)
-    .catch((error) => {
-      if (error === 'Not found') {
-        if (throwNotFound) {
-          throw {
-            code: 404,
-            text: 'User not found',
-          };
-        } else {
-          return { name, notFound: true };
-        }
+  return dataExists(couchdb, view, name).catch(error => {
+    if (error === 'Not found') {
+      if (throwNotFound) {
+        throw {
+          code: 404,
+          text: 'User not found',
+        };
       } else {
-        throw error;
+        return { name, notFound: true };
       }
-    });
+    } else {
+      throw error;
+    }
+  });
 }
 
 function checkBruteforce({ redis, ip }) {
   let tries;
-  return redis.getAsync(`bf_${ip}`)
-    .then((result) => {
+  return redis
+    .getAsync(`bf_${ip}`)
+    .then(result => {
       tries = result ? parseInt(result, 10) + 1 : 1;
       return redis.setexAsync(`bf_${ip}`, tries * 60, tries);
     })
@@ -103,7 +103,6 @@ function hexStringToUint8Array(hexString) {
   return arrayBuffer;
 }
 
-
 function bytesToHexString(givenBytes) {
   if (!givenBytes) {
     return null;
@@ -134,16 +133,37 @@ function xorSeed(byteArray1, byteArray2) {
   throw 'xorSeed wait for 32 bytes arrays';
 }
 
-function checkSignature({ couchdb, name, sig, data }) {
+function checkSignature({ couchdb, redis, name, sig, data }) {
+  const signatureDelay = process.env.SIGNATURE_DELAY || 30;
+  let rawUser;
   return userExists({ couchdb, name })
-    .then((rawUser) => {
+    .then(rRawUser => {
+      rawUser = rRawUser;
+      const signatureTime = parseInt(data.split('|').pop(), 10);
+      const signatureDelayMs = signatureDelay * 1000;
+      const now = Date.now();
+      if (
+        signatureTime + signatureDelayMs > now &&
+        signatureTime - signatureDelayMs < now
+      ) {
+        return redis.setnxAsync(sig, 1);
+      }
+      return Promise.reject('Invalid');
+    })
+    .then(newSig => {
+      if (newSig === 1) {
+        return redis.expireAsync(sig, signatureDelay * 2);
+      }
+      return Promise.reject('Invalid');
+    })
+    .then(() => {
       const user = rawUser.data;
       const n = new Buffer(user.publicKey.n, 'base64');
       const e = new Buffer(user.publicKey.e, 'base64');
 
       const publicKey = rsa.setPublicKey(
         new BigInteger(n.toString('hex'), 16),
-        new BigInteger(e.toString('hex'), 16),
+        new BigInteger(e.toString('hex'), 16)
       );
       const signature = new Buffer(sig, 'hex');
 
@@ -160,8 +180,9 @@ function checkSignature({ couchdb, name, sig, data }) {
       if (valid) {
         return rawUser;
       }
-      throw 'Invalid';
-    }).catch((error) => {
+      return Promise.reject('Invalid');
+    })
+    .catch(error => {
       if (error !== 'Invalid') {
         Console.log(error);
       }
@@ -177,8 +198,9 @@ function generateRescueCodes() {
   const randomBytes = forge.random.getBytesSync(6 * 2);
   let rescueCode = 0;
   for (let i = 0; i < randomBytes.length; i += 2) {
+    rescueCode = randomBytes[i].charCodeAt(0) +
     // eslint-disable-next-line
-    rescueCode = randomBytes[i].charCodeAt(0) + (randomBytes[i + 1].charCodeAt(0) << 8);
+      (randomBytes[i + 1].charCodeAt(0) << 8);
     rescueCodes.push(rescueCode);
   }
   return rescueCodes;

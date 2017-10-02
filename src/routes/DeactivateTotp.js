@@ -4,16 +4,17 @@ import url from 'url';
 import Console from '../console';
 import Utils from '../utils';
 
-export default ({ couchdb }) => {
+export default ({ couchdb, redis }) => {
   const route = Router();
   route.put('/:name', (req, res) => {
     Utils.checkSignature({
       couchdb,
+      redis,
       name: req.params.name,
       sig: req.query.sig,
-      data: `${req.baseUrl}${url.parse(req.url).pathname}`,
+      data: `${req.baseUrl}${url.parse(req.url).pathname}|${req.query.sigTime}`,
     })
-      .then((rawUser) => {
+      .then(rawUser => {
         const doc = {
           _id: rawUser.id,
           _rev: rawUser.rev,
@@ -28,7 +29,7 @@ export default ({ couchdb }) => {
       .then(() => {
         Utils.reason(res, 200, 'TOTP deactivated');
       })
-      .catch((error) => {
+      .catch(error => {
         Console.error(res, error);
       });
   });

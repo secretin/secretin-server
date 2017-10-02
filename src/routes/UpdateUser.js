@@ -4,17 +4,18 @@ import forge from 'node-forge';
 import Console from '../console';
 import Utils from '../utils';
 
-export default ({ couchdb }) => {
+export default ({ couchdb, redis }) => {
   const route = Router();
   route.put('/:name', (req, res) => {
     let jsonBody;
     Utils.checkSignature({
       couchdb,
+      redis,
       name: req.params.name,
       sig: req.body.sig,
-      data: req.body.json,
+      data: `${req.body.json}|${req.body.sigTime}`,
     })
-      .then((rawUser) => {
+      .then(rawUser => {
         jsonBody = JSON.parse(req.body.json);
         const doc = {
           _id: rawUser.id,
@@ -23,7 +24,10 @@ export default ({ couchdb }) => {
             [req.params.name]: rawUser.data,
           },
         };
-        if (req.query.type === 'options') {
+        if (
+          typeof jsonBody.pass === 'undefined' ||
+          typeof jsonBody.privateKey === 'undefined'
+        ) {
           doc.user[req.params.name].options = jsonBody;
         } else {
           const md = forge.md.sha256.create();
@@ -38,7 +42,7 @@ export default ({ couchdb }) => {
       .then(() => {
         Utils.reason(res, 200, 'User updated');
       })
-      .catch((error) => {
+      .catch(error => {
         Console.error(res, error);
       });
   });

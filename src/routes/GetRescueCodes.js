@@ -4,17 +4,18 @@ import url from 'url';
 import Console from '../console';
 import Utils from '../utils';
 
-export default ({ couchdb }) => {
+export default ({ couchdb, redis }) => {
   const route = Router();
   route.get('/:name', (req, res) => {
     let rescueCodes;
     Utils.checkSignature({
       couchdb,
+      redis,
       name: req.params.name,
       sig: req.query.sig,
-      data: `${req.baseUrl}${url.parse(req.url).pathname}`,
+      data: `${req.baseUrl}${url.parse(req.url).pathname}|${req.query.sigTime}`,
     })
-      .then((rawUser) => {
+      .then(rawUser => {
         const user = rawUser.data;
 
         if (user.pass.totp) {
@@ -35,7 +36,7 @@ export default ({ couchdb }) => {
       .then(() => {
         res.json(rescueCodes);
       })
-      .catch((error) => {
+      .catch(error => {
         Console.error(res, error);
       });
   });

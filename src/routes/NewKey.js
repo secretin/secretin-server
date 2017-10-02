@@ -4,29 +4,32 @@ import _ from 'lodash';
 import Console from '../console';
 import Utils from '../utils';
 
-export default ({ couchdb }) => {
+export default ({ couchdb, redis }) => {
   const route = Router();
   route.post('/:name', (req, res) => {
     let jsonBody;
     let usersNotFound;
     Utils.checkSignature({
       couchdb,
+      redis,
       name: req.params.name,
       sig: req.body.sig,
-      data: req.body.json,
+      data: `${req.body.json}|${req.body.sigTime}`,
     })
-      .then((user) => {
+      .then(user => {
         jsonBody = JSON.parse(req.body.json);
-        if (typeof user.data.keys[jsonBody.title].rights !== 'undefined'
-            && user.data.keys[jsonBody.title].rights > 1) {
+        if (
+          typeof user.data.keys[jsonBody.title].rights !== 'undefined' &&
+          user.data.keys[jsonBody.title].rights > 1
+        ) {
           return Utils.secretExists({ couchdb, title: jsonBody.title });
         }
         throw {
           code: 403,
-          text: 'You can\'t generate new key for this secret',
+          text: "You can't generate new key for this secret",
         };
       })
-      .then((rawSecret) => {
+      .then(rawSecret => {
         const doc = {
           _id: rawSecret.id,
           _rev: rawSecret.rev,
@@ -44,21 +47,24 @@ export default ({ couchdb }) => {
       })
       .then(() => {
         const userPromises = [];
-        jsonBody.wrappedKeys.forEach((wrappedKey) => {
+        jsonBody.wrappedKeys.forEach(wrappedKey => {
           userPromises.push(
-            Utils.userExists({ couchdb, name: wrappedKey.user }, false)
-              .then(user => ({
-                user,
-                name: wrappedKey.user,
-                key: wrappedKey.key,
-              })));
+            Utils.userExists(
+              { couchdb, name: wrappedKey.user },
+              false
+            ).then(user => ({
+              user,
+              name: wrappedKey.user,
+              key: wrappedKey.key,
+            }))
+          );
         });
         return Promise.all(userPromises);
       })
-      .then((users) => {
+      .then(users => {
         usersNotFound = _.remove(users, user => user.user.notFound);
         const userPromises = [];
-        users.forEach((user) => {
+        users.forEach(user => {
           const doc = {
             _id: user.user.id,
             _rev: user.user.rev,
@@ -80,7 +86,7 @@ export default ({ couchdb }) => {
           Utils.reason(res, 200, 'New key reshared');
         }
       })
-      .catch((error) => {
+      .catch(error => {
         Console.error(res, error);
       });
   });

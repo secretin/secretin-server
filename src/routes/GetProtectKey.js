@@ -11,20 +11,23 @@ export default ({ redis, couchdb }) => {
   let isBruteforce;
   route.get('/:name/:deviceId/:hash', (req, res) => {
     Utils.userExists({ couchdb, name: req.params.name })
-      .then((user) => {
+      .then(user => {
         rawUser = user;
         if (req.params.hash === 'undefined') {
           return Promise.resolve(false);
         }
         let ip;
-        if (process.env.BEHIND_REVERSE_PROXY && process.env.BEHIND_REVERSE_PROXY === '1') {
+        if (
+          process.env.BEHIND_REVERSE_PROXY &&
+          process.env.BEHIND_REVERSE_PROXY === '1'
+        ) {
           ip = req.headers['x-forwarded-for'] || req.ip;
         } else {
           ip = req.ip;
         }
         return Utils.checkBruteforce({ redis, ip });
       })
-      .then((rIsBruteforce) => {
+      .then(rIsBruteforce => {
         isBruteforce = rIsBruteforce;
         if (isBruteforce) {
           return Promise.resolve();
@@ -32,7 +35,7 @@ export default ({ redis, couchdb }) => {
         const key = `protectKey_${req.params.name}_${req.params.deviceId}`;
         return redis.hgetallAsync(key);
       })
-      .then((result) => {
+      .then(result => {
         let content = result;
         const user = rawUser.data;
 
@@ -48,7 +51,9 @@ export default ({ redis, couchdb }) => {
         }
         const validHash = compare(md.digest().toHex(), content.hash);
         if (!content || isBruteforce || !validHash) {
-          content.protectKey = forge.util.bytesToHex(forge.random.getBytesSync(128));
+          content.protectKey = forge.util.bytesToHex(
+            forge.random.getBytesSync(128)
+          );
         }
         delete content.hash;
         content.publicKey = user.publicKey;
@@ -56,7 +61,7 @@ export default ({ redis, couchdb }) => {
 
         res.json(content);
       })
-      .catch((error) => {
+      .catch(error => {
         Console.error(res, error);
       });
   });

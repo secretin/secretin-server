@@ -9,9 +9,13 @@ import Utils from '../utils';
 
 function getAllMetadatas(couchdb, name) {
   const view = '_design/secrets/_view/getMetadatas';
-  return couchdb.get(couchdb.databaseName, view, { key: name })
+  return couchdb
+    .get(couchdb.databaseName, view, { key: name })
     .then(({ data }) =>
-      data.rows.reduce((allMetadatas, { value }) => Object.assign(allMetadatas, value), {}));
+      data.rows.reduce(
+        (allMetadatas, { value }) => Object.assign(allMetadatas, value),
+        {}
+      ));
 }
 
 export default ({ redis, couchdb }) => {
@@ -22,20 +26,23 @@ export default ({ redis, couchdb }) => {
     let totpValid;
     let isBruteforce;
     Utils.userExists({ couchdb, name: req.params.name })
-      .then((user) => {
+      .then(user => {
         rawUser = user;
         if (req.params.hash === 'undefined') {
           return Promise.resolve(false);
         }
         let ip;
-        if (process.env.BEHIND_REVERSE_PROXY && process.env.BEHIND_REVERSE_PROXY === '1') {
+        if (
+          process.env.BEHIND_REVERSE_PROXY &&
+          process.env.BEHIND_REVERSE_PROXY === '1'
+        ) {
           ip = req.headers['x-forwarded-for'] || req.ip;
         } else {
           ip = req.ip;
         }
         return Utils.checkBruteforce({ redis, ip });
       })
-      .then((rIsBruteforce) => {
+      .then(rIsBruteforce => {
         submitUser = rawUser.data;
         isBruteforce = rIsBruteforce;
         if (isBruteforce) {
@@ -47,13 +54,19 @@ export default ({ redis, couchdb }) => {
           totpValid = false;
           const protectedSeed = Utils.hexStringToUint8Array(submitUser.seed);
           const hash = Utils.hexStringToUint8Array(req.params.hash);
-          const seed = Utils.bytesToHexString(Utils.xorSeed(hash, protectedSeed));
+          const seed = Utils.bytesToHexString(
+            Utils.xorSeed(hash, protectedSeed)
+          );
           totpValid = speakeasy.totp.verify({
             secret: seed,
             encoding: 'hex',
             token: req.query.otp,
           });
-          if (!totpValid && typeof submitUser.rescueCodes !== 'undefined' && submitUser.rescueCodes.shift() === parseInt(req.query.otp, 10)) {
+          if (
+            !totpValid &&
+            typeof submitUser.rescueCodes !== 'undefined' &&
+            submitUser.rescueCodes.shift() === parseInt(req.query.otp, 10)
+          ) {
             totpValid = true;
             const doc = {
               _id: rawUser.id,
@@ -75,7 +88,8 @@ export default ({ redis, couchdb }) => {
           }
         }
         return Promise.resolve();
-      }).then(() => {
+      })
+      .then(() => {
         const md = forge.md.sha256.create();
         md.update(req.params.hash);
 
@@ -85,21 +99,16 @@ export default ({ redis, couchdb }) => {
             privateKey: forge.util.bytesToHex(forge.random.getBytesSync(3232)),
             iv: forge.util.bytesToHex(forge.random.getBytesSync(16)),
           };
-          submitUser.keys = {};
-          submitUser.options = { options: '', signature: '' };
-          return Promise.resolve({});
         }
 
-        return getAllMetadatas(couchdb, req.params.name);
-      })
-      .then((allMetadatas) => {
-        submitUser.metadatas = allMetadatas;
+        delete submitUser.options;
+        delete submitUser.keys;
         delete submitUser.seed;
         delete submitUser.rescueCodes;
         delete submitUser.pass.hash;
         res.json(submitUser);
       })
-      .catch((error) => {
+      .catch(error => {
         Console.error(res, error);
       });
   });
@@ -108,15 +117,16 @@ export default ({ redis, couchdb }) => {
     let rawUser;
     Utils.checkSignature({
       couchdb,
+      redis,
       name: req.params.name,
       sig: req.query.sig,
-      data: `${req.baseUrl}${url.parse(req.url).pathname}`,
+      data: `${req.baseUrl}${url.parse(req.url).pathname}|${req.query.sigTime}`,
     })
-      .then((user) => {
+      .then(user => {
         rawUser = user;
         return getAllMetadatas(couchdb, req.params.name);
       })
-      .then((allMetadatas) => {
+      .then(allMetadatas => {
         const user = rawUser.data;
         user.metadatas = allMetadatas;
         delete user.seed;
@@ -124,7 +134,7 @@ export default ({ redis, couchdb }) => {
         delete user.pass.hash;
         res.json(user);
       })
-      .catch((error) => {
+      .catch(error => {
         Console.error(res, error);
       });
   });

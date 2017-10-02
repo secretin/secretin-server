@@ -9,7 +9,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npm run build && node dist",
     "package": "npm run build && cp package.json dist/ && tar cvzf dist.tar.gz dist",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "prettier": "prettier --print-width 80 --trailing-comma es5 --single-quote --write \"src/**/*.js\""
   },
   "repository": {
     "type": "git",
@@ -40,6 +41,7 @@
     "babel-preset-es2015": "^6.18.0",
     "eslint": "^3.12.2",
     "eslint-config-airbnb-base": "^11.0.0",
+    "eslint-config-prettier": "^2.2.0",
     "eslint-plugin-import": "^2.2.0",
     "nodemon": "^1.11.0"
   }
