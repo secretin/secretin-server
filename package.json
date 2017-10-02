@@ -4,11 +4,11 @@
   "description": "💾 Server side of Secretin. Keep your data safe.",
   "main": "index.js",
   "scripts": {
-    "dev": "TEST_SERVER=1 nodemon -w src --exec \"npm run lint && babel-node src --presets es2015\"",
-    "build": "npm run lint && babel src -s -D -d dist --presets es2015 && cp manifest.yml dist/",
+    "dev": "TEST_SERVER=1 nodemon -w src --exec \"yarn lint && babel-node src --presets es2015\"",
+    "build": "yarn lint && babel src -s -D -d dist --presets es2015 && cp manifest.yml dist/",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npm run build && node dist",
-    "package": "npm run build && cp package.json dist/ && tar cvzf dist.tar.gz dist",
+    "start": "yarn build && node dist",
+    "package": "yarn build && cp package.json dist/ && tar cvzf dist.tar.gz dist",
     "lint": "eslint src/",
     "prettier": "prettier --print-width 80 --trailing-comma es5 --single-quote --write \"src/**/*.js\""
   },
@@ -23,14 +23,14 @@
   },
   "homepage": "https://github.com/secretin/secretin-server#readme",
   "dependencies": {
-    "bluebird": "^3.4.7",
-    "body-parser": "^1.15.2",
-    "cors": "^2.8.1",
-    "express": "^4.14.0",
+    "bluebird": "^3.5.0",
+    "body-parser": "^1.18.2",
+    "cors": "^2.8.4",
+    "express": "^4.16.1",
     "lodash": "^4.17.4",
-    "node-couchdb": "^1.1.0",
-    "node-forge": "^0.6.46",
-    "redis": "^2.6.3",
+    "node-couchdb": "^1.2.0",
+    "node-forge": "^0.7.1",
+    "redis": "^2.8.0",
     "secure-compare": "^3.0.1",
     "speakeasy": "^2.0.0"
   },
@@ -44,5 +44,6 @@
     "eslint-config-prettier": "^2.2.0",
     "eslint-plugin-import": "^2.2.0",
     "nodemon": "^1.11.0"
-  }
+  },
+  "peerDependencies": {}
 }

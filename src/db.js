@@ -81,7 +81,8 @@ function (doc) {
             // END VIEW
           },
         },
-      }));
+      })
+    );
 }
 
 export default (config, callback) => {

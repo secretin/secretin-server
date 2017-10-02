@@ -8,8 +8,11 @@ function getDatabase(couchdb, name) {
   return couchdb
     .get(couchdb.databaseName, view, { key: name })
     .then(({ data }) =>
-      data.rows.reduce((secrets, { value }) => Object.assign(secrets, value), {
-      }));
+      data.rows.reduce(
+        (secrets, { value }) => Object.assign(secrets, value),
+        {}
+      )
+    );
 }
 
 export default ({ couchdb, redis }) => {

@@ -15,7 +15,8 @@ function getAllMetadatas(couchdb, name) {
       data.rows.reduce(
         (allMetadatas, { value }) => Object.assign(allMetadatas, value),
         {}
-      ));
+      )
+    );
 }
 
 export default ({ redis, couchdb }) => {

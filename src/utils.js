@@ -198,8 +198,9 @@ function generateRescueCodes() {
   const randomBytes = forge.random.getBytesSync(6 * 2);
   let rescueCode = 0;
   for (let i = 0; i < randomBytes.length; i += 2) {
-    rescueCode = randomBytes[i].charCodeAt(0) +
-    // eslint-disable-next-line
+    rescueCode =
+      randomBytes[i].charCodeAt(0) +
+      // eslint-disable-next-line
       (randomBytes[i + 1].charCodeAt(0) << 8);
     rescueCodes.push(rescueCode);
   }
