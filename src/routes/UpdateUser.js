@@ -28,7 +28,11 @@ export default ({ couchdb, redis }) => {
           typeof jsonBody.pass === 'undefined' ||
           typeof jsonBody.privateKey === 'undefined'
         ) {
-          doc.user[req.params.name].options = jsonBody;
+          if (typeof jsonBody.options === 'undefined') {
+            doc.user[req.params.name].metadataCache = jsonBody;
+          } else {
+            doc.user[req.params.name].options = jsonBody;
+          }
         } else {
           const md = forge.md.sha256.create();
           md.update(jsonBody.pass.hash);

@@ -103,6 +103,7 @@ export default ({ redis, couchdb }) => {
         }
 
         delete submitUser.options;
+        delete submitUser.metadataCache;
         delete submitUser.keys;
         delete submitUser.seed;
         delete submitUser.rescueCodes;
