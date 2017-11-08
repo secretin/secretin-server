@@ -32,7 +32,7 @@ const app = express();
 app.server = http.createServer(app);
 
 app.use(cors());
-app.use(bodyParser.json({limit: '100mb'}));
+app.use(bodyParser.json({ limit: '100mb' }));
 
 initializeDb(config, (couchdb, redis) => {
   if (process.env.TEST_SERVER) {

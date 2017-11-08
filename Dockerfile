@@ -16,4 +16,8 @@ EXPOSE 80
 
 ENTRYPOINT ["/usr/local/bin/dumb-init", "--"]
 
-CMD [ "yarn", "start"]
+COPY ./setup-system-tables-and-start.sh /
+
+RUN chmod 755 /setup-system-tables-and-start.sh
+
+CMD [ "/setup-system-tables-and-start.sh" ]

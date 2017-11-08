@@ -1,11 +1,11 @@
 version: '2'
 services:
   couchdb:
-    image: couchdb:1.6.1
+    image: apache/couchdb:2.1.1
     ports:
       - "5984:5984"
     volumes:
-      - /usr/local/var/lib/couchdb
+      - couchdb:/opt/couchdb/data/
   redis:
     image: redis:3.2.5
     ports:
@@ -22,3 +22,6 @@ services:
      depends_on:
        - redis
        - couchdb
+
+volumes:
+  couchdb:
