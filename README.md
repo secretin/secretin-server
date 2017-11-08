@@ -11,6 +11,17 @@ It will add `/reset` route to wipe the database during tests.
 
 The server will listen on port 3000.
 
+## Migrate from couchdb 1.6.1 to couchdb 2.1.1
+
+To migrate with docker-compose
+```
+git pull origin master
+docker-compose build
+docker-compose -f docker-compose.yml -f docker-compose.migrate.1_6_1__2_1_1.yml up
+```
+
+then you can run `docker-compose up` as usual
+
 ## Setup in production
 
 You'll need a redis server and a couchdb server as databases.
