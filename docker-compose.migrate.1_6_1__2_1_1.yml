@@ -1,0 +1,11 @@
+version: '2'
+services:
+  couchdb_old:
+    image: couchdb:1.6.1
+    volumes_from:
+      - couchdb:rw
+  secretin-server:
+     environment:
+       OLD_SECRETIN_SERVER_COUCHDB_URL: http://couchdb_old:5984/secretin
+     depends_on:
+       - couchdb_old
