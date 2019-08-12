@@ -1,13 +1,13 @@
 version: '2'
 services:
   couchdb:
-    image: apache/couchdb:2.1.1
+    image: couchdb:2.3.1
     ports:
       - "5984:5984"
     volumes:
       - couchdb:/opt/couchdb/data/
   redis:
-    image: redis:3.2.5
+    image: redis:5.0.5
     ports:
      - "6379:6379"
   secretin-server:
