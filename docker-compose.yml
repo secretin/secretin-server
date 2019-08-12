@@ -7,7 +7,7 @@ services:
     volumes:
       - couchdb:/opt/couchdb/data/
   redis:
-    image: redis:3.2.5
+    image: redis:5.0.5
     ports:
      - "6379:6379"
   secretin-server:
