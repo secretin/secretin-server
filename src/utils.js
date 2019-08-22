@@ -158,14 +158,14 @@ function checkSignature({ couchdb, redis, name, sig, data }) {
     })
     .then(() => {
       const user = rawUser.data;
-      const n = new Buffer(user.publicKey.n, 'base64');
-      const e = new Buffer(user.publicKey.e, 'base64');
+      const n = Buffer.from(user.publicKey.n, 'base64');
+      const e = Buffer.from(user.publicKey.e, 'base64');
 
       const publicKey = rsa.setPublicKey(
         new BigInteger(n.toString('hex'), 16),
         new BigInteger(e.toString('hex'), 16)
       );
-      const signature = new Buffer(sig, 'hex');
+      const signature = Buffer.from(sig, 'hex');
 
       const pss = forge.pss.create({
         md: forge.md.sha256.create(),
