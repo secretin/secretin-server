@@ -148,13 +148,13 @@ function checkSignature({ couchdb, redis, name, sig, data }) {
       ) {
         return redis.setnxAsync(sig, 1);
       }
-      return Promise.reject('Invalid');
+      return Promise.reject(new Error('Invalid'));
     })
     .then(newSig => {
       if (newSig === 1) {
         return redis.expireAsync(sig, signatureDelay * 2);
       }
-      return Promise.reject('Invalid');
+      return Promise.reject(new Error('Invalid'));
     })
     .then(() => {
       const user = rawUser.data;
@@ -180,7 +180,7 @@ function checkSignature({ couchdb, redis, name, sig, data }) {
       if (valid) {
         return rawUser;
       }
-      return Promise.reject('Invalid');
+      return Promise.reject(new Error('Invalid'));
     })
     .catch(error => {
       if (error !== 'Invalid') {
