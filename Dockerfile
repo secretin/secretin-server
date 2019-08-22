@@ -1,4 +1,4 @@
-FROM node:8.6.0
+FROM node:12.8.1
 
 # PID 1 needs to handle process reaping and signals
 # https://engineeringblog.yelp.com/2016/01/dumb-init-an-init-for-docker.html
