@@ -2,8 +2,8 @@
 import forge from 'node-forge';
 import Console from './console';
 
-const rsa = forge.pki.rsa;
-const BigInteger = forge.jsbn.BigInteger;
+const { rsa } = forge.pki;
+const { BigInteger } = forge.jsbn;
 
 function reason(res, code, text) {
   res.writeHead(code, text, {});
