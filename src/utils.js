@@ -94,7 +94,7 @@ function hexStringToUint8Array(hexString) {
 
   for (let i = 0; i < hexString.length; i += 2) {
     const byteValue = parseInt(hexString.substr(i, 2), 16);
-    if (isNaN(byteValue)) {
+    if (Number.isNaN(Number(byteValue))) {
       throw 'Invalid hexString';
     }
     arrayBuffer[i / 2] = byteValue;
