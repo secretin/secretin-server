@@ -1,6 +1,5 @@
 /* eslint no-bitwise: ["error", { "allow": ["^"] }] */
 import forge from 'node-forge';
-import Console from './console';
 
 const { rsa } = forge.pki;
 const { BigInteger } = forge.jsbn;
@@ -184,7 +183,8 @@ function checkSignature({ couchdb, redis, name, sig, data }) {
     })
     .catch(error => {
       if (error !== 'Invalid') {
-        Console.log(error);
+        // eslint-disable-next-line no-console
+        console.log(error);
       }
       throw {
         code: 403,

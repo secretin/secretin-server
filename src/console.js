@@ -1,6 +1,7 @@
 import Utils from './utils';
 
 function log(e) {
+  // eslint-disable-next-line no-console
   console.log(e);
 }
 
