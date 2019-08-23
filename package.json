@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "TEST_SERVER=1 nodemon -w src --exec \"yarn lint && babel-node src --presets es2015\"",
-    "build": "yarn lint && babel src -s -D -d dist --presets es2015 && cp manifest.yml dist/",
+    "build": "yarn lint && babel src -s -D -d dist --presets env && cp manifest.yml dist/",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "yarn build && node dist",
     "package": "yarn build && cp package.json dist/ && tar cvzf dist.tar.gz dist",
