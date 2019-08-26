@@ -14,7 +14,10 @@ export default ({ couchdb }) => {
           throw 'User already exists';
         },
         error => {
-          if (error.text === 'User not found') {
+          if (process.env.SECRETIN_SERVER_DISABLE_REGISTRATION) {
+            Utils.reason(res, 403, 'Registration disabled');
+            throw 'Registration disabled';
+          } else if (error.text === 'User not found') {
             const doc = {
               user: {
                 [req.params.name]: req.body,
