@@ -158,8 +158,12 @@ function checkSignature({ couchdb, redis, name, sig, data }) {
     })
     .then(() => {
       const user = rawUser.data;
-      const n = new Buffer(user.publicKey.n, 'base64');
-      const e = new Buffer(user.publicKey.e, 'base64');
+
+      // Retro compatibility before we used the same key to sign and encrypt
+      const publicKeySign = user.publicKeySign ? user.publicKeySign : user.publicKey
+
+      const n = new Buffer(publicKeySign.n, 'base64');
+      const e = new Buffer(publicKeySign.e, 'base64');
 
       const publicKey = rsa.setPublicKey(
         new BigInteger(n.toString('hex'), 16),
