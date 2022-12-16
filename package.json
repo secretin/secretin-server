@@ -4,6 +4,8 @@
   "description": "💾 Server side of Secretin. Keep your data safe.",
   "main": "index.js",
   "scripts": {
+    "docker:dev": "docker-compose -f docker-compose.yml -f docker-compose.test.yml up",
+    "docker:start": "docker-compose up",
     "dev": "TEST_SERVER=1 nodemon -w src --exec \"yarn lint && babel-node src --presets es2015\"",
     "build": "yarn lint && babel src -s -D -d dist --presets es2015 && cp manifest.yml dist/",
     "test": "echo \"Error: no test specified\" && exit 1",
