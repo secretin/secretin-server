@@ -160,7 +160,7 @@ function checkSignature({ couchdb, redis, name, sig, data }) {
       const user = rawUser.data;
 
       // Retro compatibility before we used the same key to sign and encrypt
-      const publicKeySign = user.publicKeySign ?? user.publicKey
+      const publicKeySign = user.publicKeySign ? user.publicKeySign : user.publicKey
 
       const n = new Buffer(publicKeySign.n, 'base64');
       const e = new Buffer(publicKeySign.e, 'base64');
