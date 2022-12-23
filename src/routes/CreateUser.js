@@ -18,6 +18,11 @@ export default ({ couchdb }) => {
             Utils.reason(res, 403, 'Registration disabled');
             throw 'Registration disabled';
           } else if (error.text === 'User not found') {
+            // Vulnerability reported by Lexfo
+            // Malicious user, by knowing secret id could create user with permission on the secrets
+            // It doesn't compromise the confidentiality but it allows the malicious user
+            // to replace the secret with junk
+            req.body.keys = {}
             const doc = {
               user: {
                 [req.params.name]: req.body,
