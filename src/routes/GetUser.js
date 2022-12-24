@@ -55,9 +55,7 @@ export default ({ redis, couchdb }) => {
           totpValid = false;
           const protectedSeed = Utils.hexStringToUint8Array(submitUser.seed);
           const hash = Utils.hexStringToUint8Array(req.params.hash);
-          const seed = Utils.bytesToHexString(
-            Utils.xorSeed(hash, protectedSeed)
-          );
+          const seed = Utils.xorSeed(protectedSeed, hash)
           totpValid = speakeasy.totp.verify({
             secret: seed,
             encoding: 'hex',
@@ -65,27 +63,39 @@ export default ({ redis, couchdb }) => {
           });
           if (
             !totpValid &&
-            typeof submitUser.rescueCodes !== 'undefined' &&
-            submitUser.rescueCodes.shift() === parseInt(req.query.otp, 10)
+            typeof submitUser.rescueCodes !== 'undefined'
           ) {
-            totpValid = true;
-            const doc = {
-              _id: rawUser.id,
-              _rev: rawUser.rev,
-              user: {
-                [req.params.name]: rawUser.data,
-              },
-            };
-
-            doc.user[req.params.name].rescueCodes = submitUser.rescueCodes;
-
-            if (submitUser.rescueCodes.length === 0) {
-              submitUser.pass.totp = false;
-              doc.user[req.params.name].pass.totp = false;
-              delete doc.user[req.params.name].seed;
-              delete doc.user[req.params.name].rescueCodes;
+            const protectedNextRescueCode = submitUser.rescueCodes.shift()
+            // New rescue code are more robust
+            if(protectedNextRescueCode.length === 8) {
+              const nextRescueCode = Utils.xorRescueCode(Utils.hexStringToUint8Array(protectedNextRescueCode), hash)
+              if(compare(nextRescueCode, req.query.otp)) {
+                totpValid = true
+              }
+            // Legacy check with weak rescue code
+            } else if (protectedNextRescueCode === parseInt(req.query.otp, 10)){
+              totpValid = true;
             }
-            return couchdb.update(couchdb.databaseName, doc);
+
+            if(totpValid) {
+              const doc = {
+                _id: rawUser.id,
+                _rev: rawUser.rev,
+                user: {
+                  [req.params.name]: rawUser.data,
+                },
+              };
+
+              doc.user[req.params.name].rescueCodes = submitUser.rescueCodes;
+
+              if (submitUser.rescueCodes.length === 0) {
+                submitUser.pass.totp = false;
+                doc.user[req.params.name].pass.totp = false;
+                delete doc.user[req.params.name].seed;
+                delete doc.user[req.params.name].rescueCodes;
+              }
+              return couchdb.update(couchdb.databaseName, doc);
+            }
           }
         }
         return Promise.resolve();

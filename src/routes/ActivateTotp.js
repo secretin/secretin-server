@@ -24,7 +24,6 @@ export default ({ couchdb, redis }) => {
         };
         doc.user[req.params.name].pass.totp = true;
         doc.user[req.params.name].seed = jsonBody.seed;
-        doc.user[req.params.name].rescueCodes = Utils.generateRescueCodes();
         return couchdb.update(couchdb.databaseName, doc);
       })
       .then(() => {

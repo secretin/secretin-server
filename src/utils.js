@@ -128,9 +128,24 @@ function xorSeed(byteArray1, byteArray2) {
     for (i = 0; i < 32; i += 1) {
       buf[i] = byteArray1[i] ^ byteArray2[i];
     }
-    return buf;
+    return bytesToHexString(buf);
   }
-  throw 'xorSeed wait for 32 bytes arrays';
+  throw new Error('xorSeed wait for 32 bytes arrays');
+}
+
+function xorRescueCode(rescueCode, hash) {
+  if (
+    hash.length === 32 &&
+    rescueCode.length === 4
+  ) {
+    const buf = new Uint8Array(rescueCode.length);
+    let i;
+    for (i = 0; i < rescueCode.length; i += 1) {
+      buf[i] = rescueCode[i] ^ hash[i];
+    }
+    return bytesToHexString(buf);
+  }
+  throw new Error('xorRescueCode wrong bytes arrays');
 }
 
 function checkSignature({ couchdb, redis, name, sig, data }) {
@@ -214,13 +229,14 @@ function generateRescueCodes() {
 const Utils = {
   userExists,
   reason,
+  generateRescueCodes,
   checkBruteforce,
   hexStringToUint8Array,
   bytesToHexString,
   xorSeed,
   checkSignature,
   secretExists,
-  generateRescueCodes,
+  xorRescueCode,
 };
 
 export default Utils;
