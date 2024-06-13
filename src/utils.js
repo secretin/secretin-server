@@ -68,6 +68,12 @@ function userExists({ couchdb, name }, throwNotFound = true) {
 }
 
 function checkBruteforce({ redis, ip }) {
+  if(process.env.MAX_FORWARD_COUNT){
+	let ipList = ip.split(',');
+	ipList = ipList.slice(0, (parseInt(process.env.MAX_FORWARD_COUNT, 10) + 1);
+	ip = ipList.join(',');
+	Console.log('Checked : '+ip);
+  }
   let tries;
   return redis
     .getAsync(`bf_${ip}`)
